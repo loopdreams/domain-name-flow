@@ -1,5 +1,7 @@
 {:paths ["src"]
  :deps  {org.clojure/clojure {:mvn/version "1.12.0"}
          org.clojure/core.async {:mvn/version "1.9.808-alpha1"}
-         io.github.clojure/core.async.flow-monitor {:git/tag "v0.1.0" :git/sha "9d02164"}}
+         io.github.clojure/core.async.flow-monitor {:git/tag "v0.1.0" :git/sha "9d02164"}
+         org.apache.kafka/kafka-clients {:mvn/version "4.0.0"}
+         metosin/jsonista {:mvn/version "0.3.13"}}
  :aliases {}}
