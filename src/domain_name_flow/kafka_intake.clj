@@ -15,13 +15,26 @@
          "enable.auto.commit", "true"}]
     (KafkaConsumer. consumer-props)))
 
-(defn kafka-consumer [chan stop-atom server-url topic]
+#_(defn kafka-consumer [chan stop-atom server-url topic]
+    (let [consumer (build-consumer server-url)]
+      (.subscribe consumer [topic])
+      (println (str "Subscribed to Kafka topic " topic " from " server-url))
+      (while (not @stop-atom)
+        (doseq [record (.poll consumer (Duration/ofMillis 1000))]
+          (a/>!! chan (.value record))))))
+
+(defn create-consumer [server-url topic]
   (let [consumer (build-consumer server-url)]
     (.subscribe consumer [topic])
-    (println (str "Subscribed to Kafka topic " topic " from " server-url))
-    (while (not @stop-atom)
-      (doseq [record (.poll consumer (Duration/ofMillis 1000))]
-        (a/>!! chan (.value record))))))
+    consumer))
+
+(defn run-consumer [chan stop-atom consumer]
+  (while (not @stop-atom)
+    (doseq [record (.poll consumer (Duration/ofMillis 100))]
+      (a/>!! chan (.value record)))))
+
+
+
 
 (comment
   (let [stop-atom (atom false)
@@ -29,6 +42,9 @@
     (future (kafka-consumer chan stop-atom
                             "kafka.zonestream.openintel.nl:9092"
                             "newly_registered_domain"))
+    (println (a/<!! chan))
+    (reset! stop-atom true)
+    (reset! stop-atom false)
     (println (a/<!! chan))
     (reset! stop-atom true)))
 

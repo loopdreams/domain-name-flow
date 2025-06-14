@@ -43,17 +43,18 @@
        :outs {:out "Output channel for urls"}})
 
   ;; Init
-  ([args]
+  ([{:keys [server-url topic] :as args}]
    (assoc args
           ::flow/in-ports {:records (a/chan 100)}
-          :stop (atom false)))
+          :stop (atom false)
+          :consumer (k/create-consumer server-url topic)))
 
   ;; Transition
-  ([{:keys [server-url topic ::flow/in-ports] :as state} transition]
+  ([{:keys [consumer ::flow/in-ports] :as state} transition]
    (case transition
      ::flow/resume
      (let [stop-atom (atom false)]
-       (future (k/kafka-consumer (:records in-ports) stop-atom server-url topic))
+       (future (k/run-consumer (:records in-ports) stop-atom consumer))
        (assoc state :stop stop-atom))
      (::flow/pause ::flow/stop)
      (do
@@ -64,9 +65,7 @@
   ([state in msg]
    [state (when (= in :records) {:out [msg]})]))
 
-(comment
-  (json/read-value "{\"domain\": \"prataptravel.com.\", \"cert_index\": 1654682859, \"ct_name\": \"DigiCert Yeti2025 Log\", \"timestamp\": 1748548424}"
-                   json/keyword-keys-object-mapper))
+
 
 (defn record-handler
   ([] {:ins {:records "Channel to recieve kafka records"}
