@@ -41,7 +41,13 @@
                 (log/error (.getMessage throwable)))}})
 
 (defn broadcaster [msg]
-  (pmap #(ringws/send % (str (h/html [:div {:id "notify"} (format "%.2f" msg)]))) @conns))
+  (pmap #(ringws/send % (str (h/html [:div {:id "notify"} (format "Average Domain Name Length: %.2f characters" msg)]))) @conns))
+
+(defn broadcaster-tlds [msg]
+  (pmap #(ringws/send % (str (h/html [:div {:id "tlds"} msg]))) @conns))
+
+(defn broadcaster-rate [msg]
+  (pmap #(ringws/send % (str (h/html [:div {:id "rate"} msg]))) @conns))
 
 
 (defn handler-main [req]
@@ -67,7 +73,9 @@
   (count @conns))
 
 (defn webserver
-  ([] {:ins {:averages "Channel to recived avg domain lens"}})
+  ([] {:ins {:averages        "Channel to recive avg domain lens"
+             :tld-frequencies "Channel to recieve tld frequencies"
+             :t-stamp-rate    "Channel to recieve url rates"}})
 
   ([args] (-> args (assoc :server (server-start))))
 
@@ -82,4 +90,10 @@
      (::flow/pause ::flow/stop)
      (do (println state) (.stop (:server state)) state)))
 
-  ([state _in msg] (broadcaster (or msg 0)) [state nil]))
+  ([state in msg]
+   (do
+     (case in
+       :averages        (broadcaster (or msg 0))
+       :tld-frequencies (broadcaster-tlds msg)
+       :t-stamp-rate    (broadcaster-rate msg))
+     [state nil])))

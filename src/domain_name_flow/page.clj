@@ -8,7 +8,11 @@
    [:div {:hx-ext "ws"
           :ws-connect "/"}
     [:div {:id "notify"
-           :hx-swap-oob "beforeend"} "Messages here?"]]])
+           :hx-swap-oob "beforeend"} "Messages here?"]
+    [:div {:id "rate"
+           :hx-swap-oob "beforeend"} "Messages here?"]
+    [:div {:id "tlds"
+           :hx-swap-oob "beforeend"} "Messages here"]]])
 
 
 (defn main-page [req]

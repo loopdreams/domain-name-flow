@@ -2,7 +2,8 @@
   (:require [clojure.string :as str]
             [jsonista.core :as json]
             [clojure.core.async :as a]
-            [clojure.core.async.flow :as flow]))
+            [clojure.core.async.flow :as flow]
+            [domain-name-flow.tables :as tables]))
 
 ;; Process functions for:
 ;; a. recieving/unpacking data stream
@@ -18,7 +19,8 @@
 (defn record-handler
   ([] {:ins      {:records "Channel to recieve kafka records"}
        :outs     {:tlds    "Channel to send extracted tlds"
-                  :domains "Channel to send extracted domain names."}
+                  :domains "Channel to send extracted domain names."
+                  :timestamps "Channel to foward timestamps."}
        :workload :compute})
 
   ([args] args)
@@ -33,7 +35,8 @@
          (json/read-value msg json/keyword-keys-object-mapper)
          [domain tld] (split-url-string domain)]
      [state {:tlds    [tld]
-             :domains [domain]}])))
+             :domains [domain]
+             :timestamps [timestamp]}])))
 
 
 ;; Average domain names length
@@ -65,7 +68,29 @@
 
      [state nil])))
 
-(defn avg-scheduler
+
+
+;; TLD frequency map
+
+(defn in-memory-tld-db
+  ([] {:ins {:tlds "Channel to recieve tld strings"
+             :push "Channel to recieve push to websocket signal"}
+       :outs {:tld-frequencies "Channel to send tld frequencies as hiccup"}})
+  ([args] (assoc args :db {}))
+  ([state transition] state)
+  ([state id-input msg]
+   (case id-input
+     :tlds
+     (let [state' (update-in state [:db msg] (fnil inc 0))]
+       [state' nil])
+     :push
+     (let [hic (tables/frequencies-table (:db state) "TLD")]
+       [state {:tld-frequencies [hic]}])
+     [state nil])))
+
+;; Scheduler - schedule push to websocket (down the line)
+
+(defn scheduler
   ([] {:outs {:push "Channel to send push signal"}
        :params {:wait "Scheduler frequency"}})
 
@@ -93,12 +118,32 @@
   ([state in _msg]
    [state (when (= in :alarm) {:push [true]})]))
 
-;; TLD frequency map
 
-(defn in-memory-tld-db
-  ([] {:ins {:tlds "Channel to recieve tld strings"}})
-  ([args] (assoc args :db {}))
+;; Announce Rate
+;; Two ways to think about it:
+;; - an independant clock that counts how many recieved on a channel ever x time
+;; - Use the timestamps sent with the domains, count time diff per x domains
+;; - Maybe do both, and see the difference?
+
+(defn rate-calculator-timestamps
+  ([] {:outs {:t-stamp-rate "Channel to sent the timestamp rate on."}
+       :ins {:timestamps "Channel to recieved domain name broadcast timestamps on."}
+       :params {:batch-size "Number of domains to group by"}})
+  ([args] (assoc args :batch (atom [])))
   ([state transition] state)
-  ([state _ msg]
-   (let [state' (update-in state [:db msg] (fnil inc 0))]
-     [state' nil])))
+  ([state in msg]
+   (let [cur @(:batch state)]
+     (if (= (dec (:batch-size state)) (count cur))
+       (let [cur (conj cur msg)
+             min (apply min cur)
+             max (apply max cur)
+             time-diff-seconds (- max min)
+             message (format "%s domains recieved every %d seconds"
+                             (:batch-size state)
+                             time-diff-seconds)]
+         (do
+           (reset! (:batch state) [])
+           [state {:t-stamp-rate [message]}]))
+       (do
+         (swap! (:batch state) conj msg)
+         [state nil])))))
