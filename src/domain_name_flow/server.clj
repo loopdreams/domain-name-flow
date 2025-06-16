@@ -40,8 +40,17 @@
                 (.printStackTrace throwable)
                 (log/error (.getMessage throwable)))}})
 
-(defn broadcaster [msg]
-  (pmap #(ringws/send % (str (h/html [:div {:id "notify"} (format "Average Domain Name Length: %.2f characters" msg)]))) @conns))
+#_(defn broadcaster [msg]
+    (pmap #(ringws/send % (str (h/html [:div {:id "notify"} (format "Average Domain Name Length: %.2f characters" msg)]))) @conns))
+
+(defn broadcaster-name-stats [msg]
+  (let [{:keys [n-items sum max min average]} msg]
+    (pmap #(ringws/send % (str (h/html [:div {:id "notify"}
+                                        [:ul
+                                         [:li (format "%d domain names received" n-items)]
+                                         [:li (format "The average name length is %.2f" average)]
+                                         [:li (format "The max name length is %d" max)]
+                                         [:li (format "The min name length is %d" min) ]]]))) @conns)))
 
 (defn broadcaster-tlds [msg]
   (pmap #(ringws/send % (str (h/html [:div {:id "tlds"} msg]))) @conns))
@@ -73,9 +82,9 @@
   (count @conns))
 
 (defn webserver
-  ([] {:ins {:averages        "Channel to recive avg domain lens"
-             :tld-frequencies "Channel to recieve tld frequencies"
-             :t-stamp-rate    "Channel to recieve url rates"}})
+  ([] {:ins {:name-stats      "Channel to receive stats about domain names"
+             :tld-frequencies "Channel to receive tld frequencies"
+             :t-stamp-rate    "Channel to receive url rates"}})
 
   ([args] (-> args (assoc :server (server-start))))
 
@@ -93,7 +102,7 @@
   ([state in msg]
    (do
      (case in
-       :averages        (broadcaster (or msg 0))
+       :name-stats      (broadcaster-name-stats (or msg {}))
        :tld-frequencies (broadcaster-tlds msg)
        :t-stamp-rate    (broadcaster-rate msg))
      [state nil])))

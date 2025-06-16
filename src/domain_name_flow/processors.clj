@@ -49,6 +49,8 @@
      :sum nxt-sum
      :average nxt-avg}))
 
+
+
 (defn domain-length-averager
   ([] {:ins {:domains "Channel to recieve domain strings"
              :push "Channel to signal when to push to server component"}
@@ -65,6 +67,41 @@
 
      :push
      [state {:averages [(-> state :average-data :average)]}]
+
+     [state nil])))
+
+(defn update-stats [{:keys [n-items sum _average max min] :as stats} new-domain]
+  (let [n-len (count new-domain)
+        max-len (if (> n-len max) n-len max)
+        min-len (if (< n-len min) n-len min)
+
+        sum (+ sum n-len)
+        nxt-n (inc n-items)
+        nxt-avg (float (/ sum nxt-n))]
+    {:n-items nxt-n
+     :sum sum
+     :min min-len
+     :max max-len
+     :average nxt-avg}))
+
+(defn domain-name-stats
+  ([] {:ins  {:domains "Channel to recieve domain strings"
+              :push    "Channel to signal when to push to server component"}
+       :outs {:name-stats "Channel to send stat values"}})
+  ([args] (assoc args :name-stats {:n-items 0
+                                   :sum     0
+                                   :max     0
+                                   :min     1000
+                                   :average 0}))
+  ([state _transition] state)
+  ([state id msg]
+   (case id
+
+     :domains
+     [(assoc state :name-stats (update-stats (:name-stats state) msg))]
+
+     :push
+     [state {:name-stats [(:name-stats state)]}]
 
      [state nil])))
 
@@ -138,9 +175,8 @@
              min (apply min cur)
              max (apply max cur)
              time-diff-seconds (- max min)
-             message (format "%s domains recieved every %d seconds"
-                             (:batch-size state)
-                             time-diff-seconds)]
+             rate (float (/ (:batch-size state) time-diff-seconds))
+             message (format "%.2f domains recieved every second" rate)]
          (do
            (reset! (:batch state) [])
            [state {:t-stamp-rate [message]}]))

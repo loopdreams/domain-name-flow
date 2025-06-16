@@ -10,7 +10,7 @@
   [out wait stop-atom]
   (loop []
     (let [tld (rand-nth [".com." ".net." ".org."])
-          domain (apply str (repeatedly (rand-int 20) #(rand-nth "abcdefghijklmnopqrstuvwxyz0123456789")))
+          domain (apply str (repeatedly (rand-nth (range 2 20)) #(rand-nth "abcdefghijklmnopqrstuvwxyz0123456789")))
           url (str domain tld)
           encoded (json/write-value-as-string {:domain url
                                                :timestamp (quot (System/currentTimeMillis) 1000)})

@@ -11,31 +11,39 @@
   []
   (flow/create-flow
    {:procs
-    {:generator                  {:args {:server-url "kafka.zonestream.openintel.nl:9092"
+    {:record-handler             {:args {}
+                                  :proc (flow/process #'processors/record-handler)}
+     :generator                  {:args {:server-url "kafka.zonestream.openintel.nl:9092"
                                          :topic      "newly_registered_domain"
                                          ;; The 'wait' here is for when using the test url generator
                                          ;; TODO: delete later
                                          :wait       500}
-                                  :proc (flow/process #'kafka/source)}
-     :record-handler             {:args {}
-                                  :proc (flow/process #'processors/record-handler)}
+                                  :proc (flow/process #'tester/test-source)}
+     ;; :generator                  {:args {:server-url "kafka.zonestream.openintel.nl:9092"
+     ;;                                     :topic      "newly_registered_domain"
+     ;;                                     ;; The 'wait' here is for when using the test url generator
+     ;;                                     ;; TODO: delete later
+     ;;                                     :wait       500}
+     ;;                              :proc (flow/process #'kafka/source)}
      :tld-db                     {:args {}
                                   :proc (flow/process #'processors/in-memory-tld-db)}
      :avgs-scheduler             {:args {:wait 1000}
                                   :proc (flow/process #'processors/scheduler)}
-     :domain-len-avgs            {:args {}
-                                  :proc (flow/process #'processors/domain-length-averager)}
+     ;; :domain-len-avgs            {:args {}
+     ;;                              :proc (flow/process #'processors/domain-length-averager)}
+     :domain-name-stats          {:args {}
+                                  :proc (flow/process #'processors/domain-name-stats)}
      :rate-calculator-timestamps {:args {:batch-size 100}
                                   :proc (flow/process #'processors/rate-calculator-timestamps)}
      :webserver                  {:args {}
                                   :proc (flow/process #'server/webserver)}}
     :conns [[[:generator :out] [:record-handler :records]]
             [[:record-handler :tlds] [:tld-db :tlds]]
-            [[:record-handler :domains] [:domain-len-avgs :domains]]
+            [[:record-handler :domains] [:domain-name-stats :domains]]
             [[:record-handler :timestamps] [:rate-calculator-timestamps :timestamps]]
-            [[:avgs-scheduler :push] [:domain-len-avgs :push]]
+            [[:avgs-scheduler :push] [:domain-name-stats :push]]
             [[:avgs-scheduler :push] [:tld-db :push]]
-            [[:domain-len-avgs :averages] [:webserver :averages]]
+            [[:domain-name-stats :name-stats] [:webserver :name-stats]]
             [[:tld-db :tld-frequencies] [:webserver :tld-frequencies]]
             [[:rate-calculator-timestamps :t-stamp-rate] [:webserver :t-stamp-rate]]]}))
 
