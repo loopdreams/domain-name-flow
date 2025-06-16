@@ -38,6 +38,17 @@
      (cons head body)
      (into [:table]))))
 
+(defn single-box [[name count]]
+  [:div {:class "tld-box"}
+   [:div {:class "tld-name"} name]
+   [:div {:class "tld-val"} count]])
+
+(defn frequencies-grid [freqs label]
+  [:div
+   [:h3 label]
+   (into [:div {:class "flex eight"}]
+         (mapv single-box freqs))])
+
 
 
 (defn sort-g-cc-tlds [db]
@@ -47,9 +58,9 @@
         cc-tlds (select-keys db (for [[k _] db
                                       :when (= (count k) 2)]
                                   k))]
-    (println cc-tlds)
-    [(frequencies-table (reverse (sort-by val g-tlds)) "gTLD")
-     (if (seq cc-tlds) (frequencies-table (reverse (sort-by val cc-tlds)) "ccTLD")
+    [(if (seq g-tlds) (frequencies-grid (reverse (sort-by val g-tlds)) "gTLDs")
+         [:div "Waiting for gTLDs to appear"])
+     (if (seq cc-tlds) (frequencies-grid (reverse (sort-by val cc-tlds)) "ccTLDs")
          [:div "Waiting for ccTLDs to appear"])]))
 
 (comment

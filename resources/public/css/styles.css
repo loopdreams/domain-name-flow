@@ -1,0 +1,26 @@
+body {
+    max-width: 700px;
+    margin: auto;
+    background-color: #f4f3ee;
+    color: #463f3a;
+}
+
+.title {
+    color: #e0afa0;
+}
+
+.tld-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    flex-direction:  column;
+    box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 1px 3px 1px;
+    margin: 0.3em;
+    padding: 0.3em;
+}
+
+.tld-name {
+    font-size: 0.9em;
+    font-weight:  bold;
+}

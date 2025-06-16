@@ -47,10 +47,10 @@
   (let [{:keys [n-items sum max min average]} msg]
     (pmap #(ringws/send % (str (h/html [:div {:id "notify"}
                                         [:ul
-                                         [:li (format "%d domain names received" n-items)]
-                                         [:li (format "The average name length is %.2f" average)]
-                                         [:li (format "The max name length is %d" max)]
-                                         [:li (format "The min name length is %d" min) ]]]))) @conns)))
+                                         [:li (format "%,12d domain names received" n-items)]
+                                         [:li (format "The average name length is %.2f characters" average)]
+                                         [:li (format "The longest name is %d" max)]
+                                         [:li (format "The shortest name is %d" min) ]]]))) @conns)))
 
 (defn broadcaster-gtlds [msg]
   (pmap #(ringws/send % (str (h/html [:div {:id "gtlds"} msg]))) @conns))
@@ -73,7 +73,8 @@
 (defn server-start
   [& args]
   (jetty/run-jetty (-> app
-                       (wrap-defaults site-defaults))
+                       (wrap-defaults site-defaults)
+                       (wrap-resource "public"))
                    {:port 3000
                     :join? false}))
 
