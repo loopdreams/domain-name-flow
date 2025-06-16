@@ -26,7 +26,7 @@
      ;;                                     :wait       500}
      ;;                              :proc (flow/process #'kafka/source)}
      :tld-db                     {:args {}
-                                  :proc (flow/process #'processors/in-memory-tld-db)}
+                                  :proc (flow/process #'processors/tld-processor)}
      :avgs-scheduler             {:args {:wait 1000}
                                   :proc (flow/process #'processors/scheduler)}
      ;; :domain-len-avgs            {:args {}
@@ -44,7 +44,8 @@
             [[:avgs-scheduler :push] [:domain-name-stats :push]]
             [[:avgs-scheduler :push] [:tld-db :push]]
             [[:domain-name-stats :name-stats] [:webserver :name-stats]]
-            [[:tld-db :tld-frequencies] [:webserver :tld-frequencies]]
+            [[:tld-db :g-tld-frequencies] [:webserver :g-tld-frequencies]]
+            [[:tld-db :cc-tld-frequencies] [:webserver :cc-tld-frequencies]]
             [[:rate-calculator-timestamps :t-stamp-rate] [:webserver :t-stamp-rate]]]}))
 
 

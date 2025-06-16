@@ -72,17 +72,13 @@
 
 (defn update-stats [{:keys [n-items sum _average max min] :as stats} new-domain]
   (let [n-len (count new-domain)
-        max-len (if (> n-len max) n-len max)
-        min-len (if (< n-len min) n-len min)
-
-        sum (+ sum n-len)
-        nxt-n (inc n-items)
-        nxt-avg (float (/ sum nxt-n))]
-    {:n-items nxt-n
-     :sum sum
-     :min min-len
-     :max max-len
-     :average nxt-avg}))
+        n-nxt (inc n-items)
+        n-sum (+ sum n-len)]
+    {:n-items n-nxt
+     :sum     n-sum
+     :min     (if (< n-len min) n-len min)
+     :max     (if (> n-len max) n-len max)
+     :average (float (/ n-sum n-nxt))}))
 
 (defn domain-name-stats
   ([] {:ins  {:domains "Channel to recieve domain strings"
@@ -90,8 +86,8 @@
        :outs {:name-stats "Channel to send stat values"}})
   ([args] (assoc args :name-stats {:n-items 0
                                    :sum     0
-                                   :max     0
                                    :min     1000
+                                   :max     0
                                    :average 0}))
   ([state _transition] state)
   ([state id msg]
@@ -123,6 +119,24 @@
      :push
      (let [hic (tables/frequencies-table (:db state) "TLD")]
        [state {:tld-frequencies [hic]}])
+     [state nil])))
+
+(defn tld-processor
+  ([] {:ins {:tlds "Channel to recieve tld strings"
+             :push "Channel to recieve push to websocket signal"}
+       :outs {:g-tld-frequencies "Channel to send gTLD frequencies as hiccup"
+              :cc-tld-frequencies "Channel to send ccTLD frequencies as hiccup"}})
+  ([args] (assoc args :db {}))
+  ([state transition] state)
+  ([state id-input msg]
+   (case id-input
+     :tlds
+     (let [state' (update-in state [:db msg] (fnil inc 0))]
+       [state' nil])
+     :push
+     (let [[gtld cctld] (tables/sort-g-cc-tlds (:db state))]
+       [state {:g-tld-frequencies [gtld]
+               :cc-tld-frequencies [cctld]}])
      [state nil])))
 
 ;; Scheduler - schedule push to websocket (down the line)

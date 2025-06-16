@@ -52,8 +52,11 @@
                                          [:li (format "The max name length is %d" max)]
                                          [:li (format "The min name length is %d" min) ]]]))) @conns)))
 
-(defn broadcaster-tlds [msg]
-  (pmap #(ringws/send % (str (h/html [:div {:id "tlds"} msg]))) @conns))
+(defn broadcaster-gtlds [msg]
+  (pmap #(ringws/send % (str (h/html [:div {:id "gtlds"} msg]))) @conns))
+
+(defn broadcaster-cctlds [msg]
+  (pmap #(ringws/send % (str (h/html [:div {:id "cctlds"} msg]))) @conns))
 
 (defn broadcaster-rate [msg]
   (pmap #(ringws/send % (str (h/html [:div {:id "rate"} msg]))) @conns))
@@ -83,7 +86,8 @@
 
 (defn webserver
   ([] {:ins {:name-stats      "Channel to receive stats about domain names"
-             :tld-frequencies "Channel to receive tld frequencies"
+             :g-tld-frequencies "Channel to receive tld frequencies"
+             :cc-tld-frequencies "Channel to receive tld frequencies"
              :t-stamp-rate    "Channel to receive url rates"}})
 
   ([args] (-> args (assoc :server (server-start))))
@@ -102,7 +106,8 @@
   ([state in msg]
    (do
      (case in
-       :name-stats      (broadcaster-name-stats (or msg {}))
-       :tld-frequencies (broadcaster-tlds msg)
-       :t-stamp-rate    (broadcaster-rate msg))
+       :name-stats         (broadcaster-name-stats (or msg {}))
+       :g-tld-frequencies  (broadcaster-gtlds msg)
+       :cc-tld-frequencies (broadcaster-cctlds msg)
+       :t-stamp-rate       (broadcaster-rate msg))
      [state nil])))

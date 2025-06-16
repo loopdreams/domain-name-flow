@@ -9,7 +9,7 @@
   "Periodically generates a random url string with either .com, .org. or .net"
   [out wait stop-atom]
   (loop []
-    (let [tld (rand-nth [".com." ".net." ".org."])
+    (let [tld (rand-nth [".com." ".net." ".org." ".eu" ".au"])
           domain (apply str (repeatedly (rand-nth (range 2 20)) #(rand-nth "abcdefghijklmnopqrstuvwxyz0123456789")))
           url (str domain tld)
           encoded (json/write-value-as-string {:domain url

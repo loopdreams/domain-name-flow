@@ -11,7 +11,9 @@
            :hx-swap-oob "beforeend"} "Messages here?"]
     [:div {:id "rate"
            :hx-swap-oob "beforeend"} "Messages here?"]
-    [:div {:id "tlds"
+    [:div {:id "gtlds"
+           :hx-swap-oob "beforeend"} "Messages here"]
+    [:div {:id "cctlds"
            :hx-swap-oob "beforeend"} "Messages here"]]])
 
 
