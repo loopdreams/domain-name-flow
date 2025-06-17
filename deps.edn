@@ -12,4 +12,8 @@
          org.ring-clojure/ring-websocket-protocols {:mvn/version "1.14.1"}
          compojure/compojure {:mvn/version "1.7.1"}
          hiccup/hiccup {:mvn/version "2.0.0-RC5"}}
- :aliases {}}
+
+ :aliases
+ {:build
+  {:deps {io.github.clojure/tools.build {:git/tag "v0.10.9" :git/sha "e405aac"}}
+   :ns-default build}}}
