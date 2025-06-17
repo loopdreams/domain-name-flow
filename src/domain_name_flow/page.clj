@@ -15,7 +15,9 @@
     [:div {:id "gtlds"
            :hx-swap-oob "beforeend"} "Messages here"]
     [:div {:id "cctlds"
-           :hx-swap-oob "beforeend"} "Messages here"]]])
+           :hx-swap-oob "beforeend"} "Messages here?"]
+    [:div {:id "certs"
+           :hx-swap-oob "beforeend"} "Messages here?"]]])
 
 (defn main-page [req]
   (hp/html5

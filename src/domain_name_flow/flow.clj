@@ -27,13 +27,15 @@
      ;;                              :proc (flow/process #'kafka/source)}
      :tld-db                     {:args {}
                                   :proc (flow/process #'processors/tld-processor)}
+     :certs-db                   {:args {}
+                                  :proc (flow/process #'processors/cert-authority-processor)}
      :avgs-scheduler             {:args {:wait 1000}
                                   :proc (flow/process #'processors/scheduler)}
      ;; :domain-len-avgs            {:args {}
      ;;                              :proc (flow/process #'processors/domain-length-averager)}
      :domain-name-stats          {:args {}
                                   :proc (flow/process #'processors/domain-name-stats)}
-     :rate-calculator-timestamps {:args {:batch-size 100}
+     :rate-calculator-timestamps {:args {:batch-size 10}
                                   :proc (flow/process #'processors/rate-calculator-timestamps)}
      :webserver                  {:args {}
                                   :proc (flow/process #'server/webserver)}}
@@ -41,11 +43,14 @@
             [[:record-handler :tlds]                     [:tld-db :tlds]]
             [[:record-handler :domains]                  [:domain-name-stats :domains]]
             [[:record-handler :timestamps]               [:rate-calculator-timestamps :timestamps]]
+            [[:record-handler :ct-name]                  [:certs-db :ct-name]]
             [[:avgs-scheduler :push]                     [:domain-name-stats :push]]
             [[:avgs-scheduler :push]                     [:tld-db :push]]
+            [[:avgs-scheduler :push]                     [:certs-db :push]]
             [[:domain-name-stats :name-stats]            [:webserver :name-stats]]
             [[:tld-db :g-tld-frequencies]                [:webserver :g-tld-frequencies]]
             [[:tld-db :cc-tld-frequencies]               [:webserver :cc-tld-frequencies]]
+            [[:certs-db :ct-frequencies]                 [:webserver :ct-frequencies]]
             [[:rate-calculator-timestamps :t-stamp-rate] [:webserver :t-stamp-rate]]]}))
 
 (defn -main [& args]

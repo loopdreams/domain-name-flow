@@ -12,7 +12,8 @@
             [ring.websocket.protocols :as ws]
             [clojure.core.async :as a :refer [thread <!!]]
             [clojure.tools.logging :as log]
-            [domain-name-flow.page :as page]))
+            [domain-name-flow.page :as page]
+            [domain-name-flow.tables :as tables]))
 
 (defn keep-alive [socket]
   (thread
@@ -61,6 +62,11 @@
 (defn broadcaster-rate [msg]
   (pmap #(ringws/send % (str (h/html [:div {:id "rate"} msg]))) @conns))
 
+(defn broadcaster-certs [msg]
+  (pmap #(ringws/send % (str (h/html [:div {:id "certs"} msg]))) @conns))
+
+
+
 
 (defn handler-main [req]
   (if (jetty/ws-upgrade-request? req)
@@ -86,10 +92,11 @@
   (count @conns))
 
 (defn webserver
-  ([] {:ins {:name-stats      "Channel to receive stats about domain names"
-             :g-tld-frequencies "Channel to receive tld frequencies"
+  ([] {:ins {:name-stats         "Channel to receive stats about domain names"
+             :g-tld-frequencies  "Channel to receive tld frequencies"
              :cc-tld-frequencies "Channel to receive tld frequencies"
-             :t-stamp-rate    "Channel to receive url rates"}})
+             :t-stamp-rate       "Channel to receive url rates"
+             :ct-frequencies     "Channel to recieve cert auth frequencies"}})
 
   ([args] (-> args (assoc :server (server-start))))
 
@@ -110,5 +117,9 @@
        :name-stats         (broadcaster-name-stats (or msg {}))
        :g-tld-frequencies  (broadcaster-gtlds msg)
        :cc-tld-frequencies (broadcaster-cctlds msg)
-       :t-stamp-rate       (broadcaster-rate msg))
+       :t-stamp-rate       (broadcaster-rate msg)
+       :ct-frequencies     (-> (sort-by val msg)
+                               (reverse)
+                               (tables/frequencies-grid "Certificate Authorities")
+                               (broadcaster-certs)))
      [state nil])))

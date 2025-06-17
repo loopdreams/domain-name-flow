@@ -16,11 +16,17 @@
 (defn split-url-string [^String url-string]
   (str/split url-string #"\."))
 
+(defn split-cert-authority-string
+  "Cert Authority info is in the form \"Authority 'log'\""
+  [cert-string]
+  (str/split cert-string #" '"))
+
 (defn record-handler
   ([] {:ins      {:records "Channel to recieve kafka records"}
        :outs     {:tlds    "Channel to send extracted tlds"
                   :domains "Channel to send extracted domain names."
-                  :timestamps "Channel to foward timestamps."}
+                  :timestamps "Channel to foward timestamps."
+                  :ct-name "Channel to forward cert authority names."}
        :workload :compute})
 
   ([args] args)
@@ -33,22 +39,22 @@
                  ct_name
                  timestamp]}
          (json/read-value msg json/keyword-keys-object-mapper)
-         [domain tld] (split-url-string domain)]
+         [domain tld] (split-url-string domain)
+         [c-authority _c-log] (split-cert-authority-string ct_name)]
      [state {:tlds    [tld]
              :domains [domain]
-             :timestamps [timestamp]}])))
-
+             :timestamps [timestamp]
+             :ct-name [c-authority]}])))
 
 ;; Average domain names length
 
 (defn update-average [{:keys [n-items sum average] :as avgs} new-domain]
   (let [nxt-sum (+ sum (count new-domain))
-        nxt-n (inc n-items)
+        nxt-n   (inc n-items)
         nxt-avg (float (/ nxt-sum nxt-n))]
     {:n-items nxt-n
-     :sum nxt-sum
+     :sum     nxt-sum
      :average nxt-avg}))
-
 
 
 (defn domain-length-averager
@@ -121,6 +127,7 @@
        [state {:tld-frequencies [hic]}])
      [state nil])))
 
+;; TODO: refactor to just send the frequency maps, and proccess them to hiccup elsewhere
 (defn tld-processor
   ([] {:ins {:tlds "Channel to recieve tld strings"
              :push "Channel to recieve push to websocket signal"}
@@ -138,6 +145,20 @@
        [state {:g-tld-frequencies [gtld]
                :cc-tld-frequencies [cctld]}])
      [state nil])))
+
+(defn cert-authority-processor
+  ([] {:ins {:ct-name "Channel to recieve the cert authority names on."
+             :push "Channel to recieve push to websocket signal"}
+       :outs {:ct-frequencies "Channel to sent cert authority frequencies"}})
+  ([args] (assoc args :db {}))
+  ([state _transition] state)
+  ([state id-input msg]
+   (case id-input
+     :ct-name
+     (let [state' (update-in state [:db msg] (fnil inc 0))]
+       [state' nil])
+     :push
+     [state {:ct-frequencies [(:db state)]}])))
 
 ;; Scheduler - schedule push to websocket (down the line)
 
@@ -181,8 +202,8 @@
        :ins {:timestamps "Channel to recieved domain name broadcast timestamps on."}
        :params {:batch-size "Number of domains to group by"}})
   ([args] (assoc args :batch (atom [])))
-  ([state transition] state)
-  ([state in msg]
+  ([state _transition] state)
+  ([state _in msg]
    (let [cur @(:batch state)]
      (if (= (dec (:batch-size state)) (count cur))
        (let [cur (conj cur msg)
