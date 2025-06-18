@@ -46,12 +46,12 @@
 
 (defn broadcaster-name-stats [msg]
   (let [{:keys [n-items sum max min average]} msg]
-    (pmap #(ringws/send % (str (h/html [:div {:id "notify"}
-                                        [:ul
+    (pmap #(ringws/send % (str (h/html [:div {:id "stats"}
+                                        [:ul {:class "list-disc list-inside"}
                                          [:li (format "%,12d domain names received" n-items)]
                                          [:li (format "The average name length is %.2f characters" average)]
-                                         [:li (format "The longest name is %d" max)]
-                                         [:li (format "The shortest name is %d" min) ]]]))) @conns)))
+                                         [:li (format "The longest name is %d characters" max)]
+                                         [:li (format "The shortest name is %d characters" min) ]]]))) @conns)))
 
 (defn broadcaster-gtlds [msg]
   (pmap #(ringws/send % (str (h/html [:div {:id "gtlds"} msg]))) @conns))
@@ -120,6 +120,6 @@
        :t-stamp-rate       (broadcaster-rate msg)
        :ct-frequencies     (-> (sort-by val msg)
                                (reverse)
-                               (tables/frequencies-grid "Certificate Authorities")
+                               (tables/frequencies-grid)
                                (broadcaster-certs)))
      [state nil])))

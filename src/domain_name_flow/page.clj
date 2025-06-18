@@ -2,30 +2,43 @@
   (:require [hiccup2.core :as h]
             [hiccup.page :as hp]))
 
+
+(defn component-headings [label]
+  (case label
+    "stats"  "Current Stats"
+    "rate"   "Rate"
+    "gtlds"  "gTLDs"
+    "cctlds" "ccTLDs"
+    "certs"  "Certificate Authorities"))
+
+(defn ws-component [label]
+  [:div {:class "my-5"}
+   [:h3 {:class "text-xl font-bold"}
+    (component-headings label)]
+   [:div {:id label
+          :hx-swap-oob "beforeend"}
+    "Waiting for messages..."]])
+
 (defn main-page-layout [req]
-  [:div
-   [:h1 {:class "title"} "Domain Name Flow"]
-   [:p "Introductory text here..."]
-   [:div {:hx-ext "ws"
-          :ws-connect "/"}
-    [:div {:id "notify"
-           :hx-swap-oob "beforeend"} "Messages here?"]
-    [:div {:id "rate"
-           :hx-swap-oob "beforeend"} "Messages here?"]
-    [:div {:id "gtlds"
-           :hx-swap-oob "beforeend"} "Messages here"]
-    [:div {:id "cctlds"
-           :hx-swap-oob "beforeend"} "Messages here?"]
-    [:div {:id "certs"
-           :hx-swap-oob "beforeend"} "Messages here?"]]])
+  [:div {:id "main" :class "max-w-2xl m-auto mt-5 p-2"}
+   [:h1 {:class "text-3xl font-bold text-[#e0afa0]"} "Domain Name Flow"]
+   [:p {:id "about"
+        :class "py-10"} "Introductory text here..."]
+   (into
+    [:div {:hx-ext "ws"
+           :ws-connect "/"}]
+    (mapv ws-component ["stats" "rate" "gtlds" "cctlds" "certs"]))])
+
 
 (defn main-page [req]
   (hp/html5
       [:head
-       [:link {:rel "stylesheet"
-               :href "https://cdn.jsdelivr.net/npm/picnic"}]
+       [:meta {:name "viewport"
+               :content "width=device-width, initial-scale=1"}]
        [:link {:rel "stylesheet"
                :href "/css/styles.css"}]
+       [:link {:rel "stylesheet"
+               :href "/css/tw.css"}]
        [:script {:src "https://unpkg.com/htmx.org@2.0.4"
                  :crossorigin "anonymous"}]
        [:script {:src "https://unpkg.com/htmx-ext-ws@2.0.2"

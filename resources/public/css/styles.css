@@ -1,6 +1,7 @@
+@import "tailwindcss";
 body {
-    max-width: 700px;
-    margin: auto;
+    /* max-width: 700px; */
+    /* margin: auto; */
     background-color: #f4f3ee;
     color: #463f3a;
 }
@@ -23,4 +24,8 @@ body {
 .tld-name {
     font-size: 0.9em;
     font-weight:  bold;
+}
+
+.tld-val {
+    font-size: 0.85em;
 }

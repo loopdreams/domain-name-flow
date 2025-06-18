@@ -13,18 +13,18 @@
    {:procs
     {:record-handler             {:args {}
                                   :proc (flow/process #'processors/record-handler)}
-     :generator                  {:args {:server-url "kafka.zonestream.openintel.nl:9092"
-                                         :topic      "newly_registered_domain"
-                                         ;; The 'wait' here is for when using the test url generator
-                                         ;; TODO: delete later
-                                         :wait       500}
-                                  :proc (flow/process #'tester/test-source)}
      ;; :generator                  {:args {:server-url "kafka.zonestream.openintel.nl:9092"
      ;;                                     :topic      "newly_registered_domain"
      ;;                                     ;; The 'wait' here is for when using the test url generator
      ;;                                     ;; TODO: delete later
      ;;                                     :wait       500}
-     ;;                              :proc (flow/process #'kafka/source)}
+     ;;                              :proc (flow/process #'tester/test-source)}
+     :generator                  {:args {:server-url "kafka.zonestream.openintel.nl:9092"
+                                         :topic      "newly_registered_domain"
+                                         ;; The 'wait' here is for when using the test url generator
+                                         ;; TODO: delete later
+                                         :wait       500}
+                                  :proc (flow/process #'kafka/source)}
      :tld-db                     {:args {}
                                   :proc (flow/process #'processors/tld-processor)}
      :certs-db                   {:args {}
