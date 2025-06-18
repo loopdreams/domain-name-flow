@@ -48,7 +48,7 @@
   (let [{:keys [n-items sum max min average]} msg]
     (pmap #(ringws/send % (str (h/html [:div {:id "stats"}
                                         [:ul {:class "list-disc list-inside"}
-                                         [:li (format "%,12d domain names received" n-items)]
+                                         [:li [:span {:class "border-solid border-1 bg-[#f1e3d3] px-1"} (format "%,2d" n-items)] " domain names received"]
                                          [:li (format "The average name length is %.2f characters" average)]
                                          [:li (format "The longest name is %d characters" max)]
                                          [:li (format "The shortest name is %d characters" min) ]]]))) @conns)))
@@ -96,7 +96,7 @@
              :g-tld-frequencies  "Channel to receive tld frequencies"
              :cc-tld-frequencies "Channel to receive tld frequencies"
              :t-stamp-rate       "Channel to receive url rates"
-             :ct-frequencies     "Channel to recieve cert auth frequencies"}})
+             :ct-frequencies     "Channel to receive cert auth frequencies"}})
 
   ([args] (-> args (assoc :server (server-start))))
 

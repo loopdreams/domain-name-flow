@@ -6,7 +6,7 @@
             [domain-name-flow.tables :as tables]))
 
 ;; Process functions for:
-;; a. recieving/unpacking data stream
+;; a. receiving/unpacking data stream
 ;;    - separate domain and tld
 ;; b. parsing/processing it in various ways:
 ;;    - add tld to frequency map
@@ -22,7 +22,7 @@
   (str/split cert-string #" '"))
 
 (defn record-handler
-  ([] {:ins      {:records "Channel to recieve kafka records"}
+  ([] {:ins      {:records "Channel to receive kafka records"}
        :outs     {:tlds    "Channel to send extracted tlds"
                   :domains "Channel to send extracted domain names."
                   :timestamps "Channel to foward timestamps."
@@ -58,7 +58,7 @@
 
 
 (defn domain-length-averager
-  ([] {:ins {:domains "Channel to recieve domain strings"
+  ([] {:ins {:domains "Channel to receive domain strings"
              :push "Channel to signal when to push to server component"}
        :outs {:averages "Channel to send avg values"}})
   ([args] (assoc args :average-data {:n-items 0
@@ -87,7 +87,7 @@
      :average (float (/ n-sum n-nxt))}))
 
 (defn domain-name-stats
-  ([] {:ins  {:domains "Channel to recieve domain strings"
+  ([] {:ins  {:domains "Channel to receive domain strings"
               :push    "Channel to signal when to push to server component"}
        :outs {:name-stats "Channel to send stat values"}})
   ([args] (assoc args :name-stats {:n-items 0
@@ -112,8 +112,8 @@
 ;; TLD frequency map
 
 (defn in-memory-tld-db
-  ([] {:ins {:tlds "Channel to recieve tld strings"
-             :push "Channel to recieve push to websocket signal"}
+  ([] {:ins {:tlds "Channel to receive tld strings"
+             :push "Channel to receive push to websocket signal"}
        :outs {:tld-frequencies "Channel to send tld frequencies as hiccup"}})
   ([args] (assoc args :db {}))
   ([state transition] state)
@@ -129,8 +129,8 @@
 
 ;; TODO: refactor to just send the frequency maps, and proccess them to hiccup elsewhere
 (defn tld-processor
-  ([] {:ins {:tlds "Channel to recieve tld strings"
-             :push "Channel to recieve push to websocket signal"}
+  ([] {:ins {:tlds "Channel to receive tld strings"
+             :push "Channel to receive push to websocket signal"}
        :outs {:g-tld-frequencies "Channel to send gTLD frequencies as hiccup"
               :cc-tld-frequencies "Channel to send ccTLD frequencies as hiccup"}})
   ([args] (assoc args :db {}))
@@ -147,8 +147,8 @@
      [state nil])))
 
 (defn cert-authority-processor
-  ([] {:ins {:ct-name "Channel to recieve the cert authority names on."
-             :push "Channel to recieve push to websocket signal"}
+  ([] {:ins {:ct-name "Channel to receive the cert authority names on."
+             :push "Channel to receive push to websocket signal"}
        :outs {:ct-frequencies "Channel to sent cert authority frequencies"}})
   ([args] (assoc args :db {}))
   ([state _transition] state)
@@ -193,13 +193,13 @@
 
 ;; Announce Rate
 ;; Two ways to think about it:
-;; - an independant clock that counts how many recieved on a channel ever x time
+;; - an independant clock that counts how many received on a channel ever x time
 ;; - Use the timestamps sent with the domains, count time diff per x domains
 ;; - Maybe do both, and see the difference?
 
 (defn rate-calculator-timestamps
   ([] {:outs {:t-stamp-rate "Channel to sent the timestamp rate on."}
-       :ins {:timestamps "Channel to recieved domain name broadcast timestamps on."}
+       :ins {:timestamps "Channel to received domain name broadcast timestamps on."}
        :params {:batch-size "Number of domains to group by"}})
   ([args] (assoc args :batch (atom [])))
   ([state _transition] state)
@@ -211,7 +211,7 @@
              max (apply max cur)
              time-diff-seconds (- max min)
              rate (float (/ (:batch-size state) time-diff-seconds))
-             message (format "%.2f domains recieved every second" rate)]
+             message (format "%.2f domains received every second" rate)]
          (do
            (reset! (:batch state) [])
            [state {:t-stamp-rate [message]}]))
