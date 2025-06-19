@@ -48,33 +48,6 @@
 
 ;; Average domain names length
 
-(defn update-average [{:keys [n-items sum average] :as avgs} new-domain]
-  (let [nxt-sum (+ sum (count new-domain))
-        nxt-n   (inc n-items)
-        nxt-avg (float (/ nxt-sum nxt-n))]
-    {:n-items nxt-n
-     :sum     nxt-sum
-     :average nxt-avg}))
-
-
-(defn domain-length-averager
-  ([] {:ins {:domains "Channel to receive domain strings"
-             :push "Channel to signal when to push to server component"}
-       :outs {:averages "Channel to send avg values"}})
-  ([args] (assoc args :average-data {:n-items 0
-                                     :sum 0
-                                     :average 0}))
-  ([state _transition] state)
-  ([state id msg]
-   (case id
-
-     :domains
-     [(assoc state :average-data (update-average (:average-data state) msg))]
-
-     :push
-     [state {:averages [(-> state :average-data :average)]}]
-
-     [state nil])))
 
 (defn update-stats [{:keys [n-items sum _average max min] :as stats} new-domain]
   (let [n-len (count new-domain)
@@ -111,21 +84,6 @@
 
 ;; TLD frequency map
 
-(defn in-memory-tld-db
-  ([] {:ins {:tlds "Channel to receive tld strings"
-             :push "Channel to receive push to websocket signal"}
-       :outs {:tld-frequencies "Channel to send tld frequencies as hiccup"}})
-  ([args] (assoc args :db {}))
-  ([state transition] state)
-  ([state id-input msg]
-   (case id-input
-     :tlds
-     (let [state' (update-in state [:db msg] (fnil inc 0))]
-       [state' nil])
-     :push
-     (let [hic (tables/frequencies-table (:db state) "TLD")]
-       [state {:tld-frequencies [hic]}])
-     [state nil])))
 
 ;; TODO: refactor to just send the frequency maps, and proccess them to hiccup elsewhere
 (defn tld-processor
