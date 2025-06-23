@@ -9,6 +9,7 @@
     "rate"   "Rate"
     "gtlds"  "gTLDs"
     "cctlds" "ccTLDs"
+    "timestamps" "Domain Counts by Time"
     "certs"  "Certificate Authorities"))
 
 (defn ws-component [label]
@@ -27,7 +28,7 @@
    (into
     [:div {:hx-ext "ws"
            :ws-connect "/"}]
-    (mapv ws-component ["stats" "rate" "gtlds" "cctlds" "certs"]))])
+    (mapv ws-component ["stats" "rate" "gtlds" "cctlds" "certs" "timestamps"]))])
 
 
 (defn main-page [req]

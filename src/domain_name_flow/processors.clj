@@ -3,7 +3,9 @@
             [jsonista.core :as json]
             [clojure.core.async :as a]
             [clojure.core.async.flow :as flow]
-            [domain-name-flow.tables :as tables]))
+            [domain-name-flow.tables :as tables]
+            [java-time.api :as jt])
+  (:import java.time.Instant))
 
 ;; Process functions for:
 ;; a. receiving/unpacking data stream
@@ -23,10 +25,9 @@
 
 (defn record-handler
   ([] {:ins      {:records "Channel to receive kafka records"}
-       :outs     {:tlds    "Channel to send extracted tlds"
-                  :domains "Channel to send extracted domain names."
+       :outs     {:domains "Channel to send extracted domain names."
                   :timestamps "Channel to foward timestamps."
-                  :ct-name "Channel to forward cert authority names."}
+                  :names "Channel to forward tld/cert authority names."}
        :workload :compute})
 
   ([args] args)
@@ -41,10 +42,10 @@
          (json/read-value msg json/keyword-keys-object-mapper)
          [domain tld] (split-url-string domain)
          [c-authority _c-log] (split-cert-authority-string ct_name)]
-     [state {:tlds    [tld]
-             :domains [domain]
+     [state {:domains [domain]
              :timestamps [timestamp]
-             :ct-name [c-authority]}])))
+             :names [{:cert c-authority
+                      :tld tld}]}])))
 
 ;; Average domain names length
 
@@ -118,9 +119,59 @@
      :push
      [state {:ct-frequencies [(:db state)]}])))
 
+(defn name-frequencies-processor
+  "Takes in a name (tld/gtld/cert authority) and adds it to a frequency map.
+  Pushes to server on push signal."
+  ([] {:ins {:names "Channel to receive a name on."
+             :push "Channel to receive push to server signal"}
+       :outs {:frequencies "Channel to send name frequencies map"}})
+  ([args] (assoc args
+                 :tld-db (atom {})
+                 :cert-db (atom {})))
+
+  ([state _transition] state)
+  ([{:keys [tld-db cert-db] :as state} input-id {:keys [cert tld]}]
+   (case input-id
+     :names
+     (do
+       (swap! tld-db update tld (fnil inc 0))
+       (swap! cert-db update cert (fnil inc 0))
+       [state nil])
+     :push
+     [state {:frequencies [{:tlds @tld-db
+                            :certs @cert-db}]}])))
+
 ;; Scheduler - schedule push to websocket (down the line)
 
 (defn scheduler
+  ([] {:outs {:push "Channel to send push signal"}
+       :params {:wait "Scheduler frequency"}})
+
+  ([args] (assoc args
+                 ::flow/in-ports {:alarm (a/chan 10)}
+                 :stop (atom false)))
+
+  ([{:keys [wait ::flow/in-ports] :as state} transition]
+   (case transition
+
+     ::flow/resume
+     (let [stop-atom (atom false)]
+       (future (loop []
+                 (let [put (a/>!! (:alarm in-ports) true)]
+                   (when (and put (not @stop-atom))
+                     (^ [long] Thread/sleep wait)
+                     (recur)))))
+       (assoc state :stop stop-atom))
+
+     (::flow/pause ::flow/stop)
+     (do
+       (reset! (:stop state) true)
+       state)))
+
+  ([state in _msg]
+   [state (when (= in :alarm) {:push [true]})]))
+
+(defn scheduler-2
   ([] {:outs {:push "Channel to send push signal"}
        :params {:wait "Scheduler frequency"}})
 
@@ -157,7 +208,7 @@
 
 (defn rate-calculator-timestamps
   ([] {:outs {:t-stamp-rate "Channel to sent the timestamp rate on."}
-       :ins {:timestamps "Channel to received domain name broadcast timestamps on."}
+       :ins {:timestamps "Channel to receive domain name broadcast timestamps on."}
        :params {:batch-size "Number of domains to group by"}})
   ([args] (assoc args :batch (atom [])))
   ([state _transition] state)
@@ -176,3 +227,29 @@
        (do
          (swap! (:batch state) conj msg)
          [state nil])))))
+
+
+;; Hourly domain counts
+
+(defn timestamp->entry [timestamp unit]
+  (let [dt (jt/local-date-time (Instant/ofEpochSecond timestamp) (jt/zone-id "UTC"))]
+    (case unit
+      :hour  (jt/as dt :year :month-of-year :day-of-month :hour-of-day)
+      :day   (jt/as dt :year :month-of-year :day-of-month)
+      :month (jt/as dt :year :month-of-year))))
+
+(defn counts-by-time
+  ([] {:ins {:timestamps "Channel to receive timestamp info on"
+             :push "Push to server signal"}
+       :outs {:time-counts "Channel to send time counts to server"}
+       :params {:time-unit "Unit of time to group counts: :hour, :day, or :month"}})
+  ([args] (assoc args :db (atom {})))
+  ([state _transition] state)
+  ([state in msg]
+   (case in
+     :timestamps
+     (let [entry (timestamp->entry msg (:time-unit state))]
+       (do (swap! (:db state) update-in entry (fnil inc 0))
+           [state nil]))
+     :push
+     [state {:time-counts [@(:db state)]}])))

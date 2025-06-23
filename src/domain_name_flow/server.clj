@@ -65,6 +65,9 @@
 (defn broadcaster-certs [msg]
   (pmap #(ringws/send % (str (h/html [:div {:id "certs"} msg]))) @conns))
 
+(defn broadcaster-timestamps [msg]
+  (pmap #(ringws/send % (str (h/html [:div {:id "timestamps"} msg]))) @conns))
+
 
 
 
@@ -92,11 +95,10 @@
   (count @conns))
 
 (defn webserver
-  ([] {:ins {:name-stats         "Channel to receive stats about domain names"
-             :g-tld-frequencies  "Channel to receive tld frequencies"
-             :cc-tld-frequencies "Channel to receive tld frequencies"
-             :t-stamp-rate       "Channel to receive url rates"
-             :ct-frequencies     "Channel to receive cert auth frequencies"}})
+  ([] {:ins {:name-stats   "Channel to receive stats about domain names"
+             :t-stamp-rate "Channel to receive url rates"
+             :frequencies  "Channel to receive name frequencies"
+             :time-counts  "Channel to receive timestamp counts"}})
 
   ([args] (-> args (assoc :server (server-start))))
 
@@ -114,12 +116,17 @@
   ([state in msg]
    (do
      (case in
-       :name-stats         (broadcaster-name-stats (or msg {}))
-       :g-tld-frequencies  (broadcaster-gtlds msg)
-       :cc-tld-frequencies (broadcaster-cctlds msg)
-       :t-stamp-rate       (broadcaster-rate msg)
-       :ct-frequencies     (-> (sort-by val msg)
-                               (reverse)
-                               (tables/frequencies-grid)
-                               (broadcaster-certs)))
+       :name-stats   (broadcaster-name-stats (or msg {}))
+       :t-stamp-rate (broadcaster-rate msg)
+       :frequencies  (let [{:keys [tlds certs]} msg
+                           [gtlds cctlds]       (tables/sort-g-cc-tlds tlds)]
+                       (do
+                         (broadcaster-gtlds gtlds)
+                         (broadcaster-cctlds cctlds)
+                         (-> (sort-by val certs)
+                             (reverse)
+                             (tables/frequencies-grid)
+                             (broadcaster-certs))))
+       :time-counts (-> (tables/time-data-table msg)
+                        (broadcaster-timestamps)))
      [state nil])))

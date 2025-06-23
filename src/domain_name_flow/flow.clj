@@ -25,32 +25,31 @@
                                          ;; TODO: delete later
                                          :wait       500}
                                   :proc (flow/process #'kafka/source)}
-     :tld-db                     {:args {}
-                                  :proc (flow/process #'processors/tld-processor)}
-     :certs-db                   {:args {}
-                                  :proc (flow/process #'processors/cert-authority-processor)}
-     :avgs-scheduler             {:args {:wait 1000}
+     :frequencies-store          {:args {}
+                                  :proc (flow/process #'processors/name-frequencies-processor)}
+     :scheduler                  {:args {:wait 1000}
                                   :proc (flow/process #'processors/scheduler)}
-     ;; :domain-len-avgs            {:args {}
-     ;;                              :proc (flow/process #'processors/domain-length-averager)}
+     :scheduler-2                {:args {:wait 2000}
+                                  :proc (flow/process #'processors/scheduler-2)}
      :domain-name-stats          {:args {}
                                   :proc (flow/process #'processors/domain-name-stats)}
      :rate-calculator-timestamps {:args {:batch-size 10}
                                   :proc (flow/process #'processors/rate-calculator-timestamps)}
+     :timestamp-counts           {:args {:time-unit :hour}
+                                  :proc (flow/process #'processors/counts-by-time)}
      :webserver                  {:args {}
                                   :proc (flow/process #'server/webserver)}}
     :conns [[[:generator :out]                           [:record-handler :records]]
-            [[:record-handler :tlds]                     [:tld-db :tlds]]
             [[:record-handler :domains]                  [:domain-name-stats :domains]]
             [[:record-handler :timestamps]               [:rate-calculator-timestamps :timestamps]]
-            [[:record-handler :ct-name]                  [:certs-db :ct-name]]
-            [[:avgs-scheduler :push]                     [:domain-name-stats :push]]
-            [[:avgs-scheduler :push]                     [:tld-db :push]]
-            [[:avgs-scheduler :push]                     [:certs-db :push]]
+            [[:record-handler :timestamps]               [:timestamp-counts :timestamps]]
+            [[:record-handler :names]                    [:frequencies-store :names]]
+            [[:scheduler :push]                          [:domain-name-stats :push]]
+            [[:scheduler :push]                          [:frequencies-store :push]]
+            [[:scheduler-2 :push]                        [:timestamp-counts :push]]
             [[:domain-name-stats :name-stats]            [:webserver :name-stats]]
-            [[:tld-db :g-tld-frequencies]                [:webserver :g-tld-frequencies]]
-            [[:tld-db :cc-tld-frequencies]               [:webserver :cc-tld-frequencies]]
-            [[:certs-db :ct-frequencies]                 [:webserver :ct-frequencies]]
+            [[:frequencies-store :frequencies]           [:webserver :frequencies]]
+            [[:timestamp-counts :time-counts]            [:webserver :time-counts]]
             [[:rate-calculator-timestamps :t-stamp-rate] [:webserver :t-stamp-rate]]]}))
 
 (defn -main [& args]
