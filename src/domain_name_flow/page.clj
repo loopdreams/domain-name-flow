@@ -22,6 +22,17 @@
           :hx-swap-oob "beforeend"}
     "Waiting for messages..."]])
 
+;; collapse functionality taken from reddit post - https://www.reddit.com/r/tailwindcss/comments/182mb9j/design_a_collapsible_and_expandable_panel_using/
+(defn ws-component-collapseable [label]
+  [:div {:class "my-5"}
+   [:label
+    [:input {:class "peer absolute scale-0" :type "checkbox"}]
+    [:h3 {:class "text-xl font-bold cursor-pointer"} (component-headings label)]
+    [:span {:class "overflow-hidden transition-all duration-300 hidden peer-checked:block"}
+     [:div {:id label
+            :hx-swap-oob "beforeend"}
+      "Waiting for messages..."]]]])
+
 (defn main-page-layout [req]
   [:div {:id "main" :class "max-w-2xl m-auto mt-5 p-2"}
    [:h1 {:class "text-3xl font-bold text-[#e0afa0]"} "Domain Name Flow"]
@@ -30,34 +41,9 @@
    (into
     [:div {:hx-ext "ws"
            :ws-connect "/"}]
-    (mapv ws-component ["stats" "rate" "gtlds" "cctlds" "certs" "timestamps"]))])
-
-(def test-vl-config
-  {:$schema "https://vega.github.io/schema/vega-lite/v6.json"
-   :data {:values [
-                   {:a 'A', :b 28},
-                   {:a 'B', :b 55},
-                   {:a 'C', :b 43},
-                   {:a 'D', :b 91},
-                   {:a 'E', :b 81},
-                   {:a 'F', :b 53},
-                   {:a 'G', :b 19},
-                   {:a 'H', :b 87},
-                   {:a 'I', :b 52},]}
-   :mark "bar"
-   :encoding {:x {:field "a" :type "ordinal"}
-              :y {:field "b" :type "quantitative"}}})
-
-(def test-ec-config
-  {:title {:text "Test"}
-   :tooltip {}
-   :legend {:data ["sales"]}
-   :xAxis {:data ["Shirts" "Cardigans" "Chiffons" "Pants"]}
-   :yAxis {}
-   :series [{:name "sales"
-             :type "bar"
-             :data [5 20 36 42]}]})
-
+    (mapv ws-component-collapseable ["stats" "rate" "gtlds" "cctlds" "certs" "timestamps"]))
+   [:div {:id "echarts"
+          :style "width: 670px; height: 400px;"}]])
 
 
 (defn main-page [req]
@@ -75,8 +61,6 @@
               :crossorigin "anonymous"}]
     [:script {:src "https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"}]]
    [:body (main-page-layout req)
-    [:div {:id "echarts"
-           :style "width: 600px;height: 400px;"}]
     [:script {:type "text/javascript"}
      (str "var myChart = echarts.init(document.getElementById('echarts'));
 
