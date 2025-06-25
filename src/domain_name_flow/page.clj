@@ -23,7 +23,7 @@
     "Waiting for messages..."]])
 
 ;; collapse functionality taken from reddit post - https://www.reddit.com/r/tailwindcss/comments/182mb9j/design_a_collapsible_and_expandable_panel_using/
-(defn ws-component-collapseable [label]
+(defn ws-component-collapsible [label]
   [:div {:class "my-5"}
    [:label
     [:input {:class "peer absolute scale-0" :type "checkbox"}]
@@ -41,7 +41,7 @@
    (into
     [:div {:hx-ext "ws"
            :ws-connect "/"}]
-    (mapv ws-component-collapseable ["stats" "rate" "gtlds" "cctlds" "certs" "timestamps"]))
+    (mapv ws-component-collapsible ["stats" "gtlds" "cctlds" "certs"]))
    [:div {:id "echarts"
           :style "width: 670px; height: 400px;"}]])
 

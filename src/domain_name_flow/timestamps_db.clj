@@ -23,7 +23,17 @@ create table timestamp_counts (
 )"]))
 
 (comment
-  (sql/insert! ds "timestamp_counts" {:date 2025062512 :count 982}))
+;;; 1152
+
+  (defn filter-valid [n]
+    (let [s (str n)
+          hr (parse-long (subs s 8 10))
+          dy (parse-long (subs s 6 8))]
+      (and (> 25 hr)
+           (< 0 dy 32))))
+  (doseq [n (filter filter-valid (range 2025051010 2025062512))]
+    (sql/insert! ds "timestamp_counts" {:date n :count (rand-nth (range 4000 6000))}))
+  (count (sql/query ds ["select * from timestamp_counts"])))
 
 (defn add-to-db! [ds {:keys [date count] :as data}]
   (sql/insert! ds "timestamp_counts" {:date date :count count}))
@@ -95,12 +105,22 @@ create table timestamp_counts (
    [state nil]))
 
 
-(defn echart-spec [data-series]
-  {:xAxis {:type "time"}
-   :yAxis {}
-   :series {:type "line"
-            :data data-series}})
+;; Chart
 
+(defn twentyfour-hr-window [last-entry]
+  (-> (jt/local-date-time (first last-entry))
+      (jt/minus (jt/days 1))
+      str))
+
+(defn echart-spec [data-series]
+  {:xAxis    {:type "time"}
+   :tooltip {}
+   :yAxis    {:name "Domain Counts (Hourly)"}
+   :series   {:type "line"
+              :data data-series}
+   :dataZoom [{:type       "slider"
+               :startValue (twentyfour-hr-window (last data-series))
+               :filterMode "none"}]})
 
 (defn echart-spec-create [ds]
   (let [data (sql/query ds ["select * from timestamp_counts"])
@@ -109,6 +129,6 @@ create table timestamp_counts (
                                  data)]
     (echart-spec data-series-tuples)))
 
-(def echart-chart (echart-spec-create ds))
+
 (comment
   (echart-spec-create ds))
