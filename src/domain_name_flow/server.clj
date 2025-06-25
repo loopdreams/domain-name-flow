@@ -59,14 +59,8 @@
 (defn broadcaster-cctlds [msg]
   (pmap #(ringws/send % (str (h/html [:div {:id "cctlds"} msg]))) @conns))
 
-(defn broadcaster-rate [msg]
-  (pmap #(ringws/send % (str (h/html [:div {:id "rate"} msg]))) @conns))
-
 (defn broadcaster-certs [msg]
   (pmap #(ringws/send % (str (h/html [:div {:id "certs"} msg]))) @conns))
-
-(defn broadcaster-timestamps [msg]
-  (pmap #(ringws/send % (str (h/html [:div {:id "timestamps"} msg]))) @conns))
 
 
 
@@ -96,9 +90,7 @@
 
 (defn webserver
   ([] {:ins {:name-stats   "Channel to receive stats about domain names"
-             :t-stamp-rate "Channel to receive url rates"
-             :frequencies  "Channel to receive name frequencies"
-             :time-counts  "Channel to receive timestamp counts"}})
+             :frequencies  "Channel to receive name frequencies"}})
 
   ([args] (-> args (assoc :server (server-start))))
 
@@ -118,7 +110,6 @@
 
      (case in
        :name-stats   (broadcaster-name-stats (or msg {}))
-       :t-stamp-rate (broadcaster-rate msg)
        :frequencies  (let [{:keys [tlds certs]} msg
                            [gtlds cctlds]       (tables/sort-g-cc-tlds tlds)]
                        (do
@@ -127,9 +118,7 @@
                          (-> (sort-by val certs)
                              (reverse)
                              (tables/frequencies-grid)
-                             (broadcaster-certs))))
-       :time-counts (-> (tables/time-data-table msg)
-                        (broadcaster-timestamps)))
+                             (broadcaster-certs)))))
      [state nil])))
 
 ;; TODO: websocket broadcaseter component
