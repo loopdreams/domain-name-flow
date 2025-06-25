@@ -1,7 +1,10 @@
 (ns domain-name-flow.tables
   (:require [clojure.string :as str]
             [java-time.api :as jt]
-            [hiccup2.core :as h]))
+            [jsonista.core :as json]
+            [hiccup2.core :as h]
+            [domain-name-flow.timestamps-db :refer [ds]]
+            [next.jdbc.sql :as sql]))
 
 
 (defn single-box [[name count]]
@@ -74,3 +77,16 @@
 
 (defn time-data-table [db]
   (first (mapv monthly-time-table (db 2025))))
+
+;; Timestamps db
+
+(def test-echart-opts
+  (json/write-value-as-string
+   {:title {:text "testing"}
+    :legend {:data ["sales"]}
+    :xAxis {:data ["Shirts" "Cardigans" "Chiffons" "Pants" "Heels" "Socks"]}
+    :yAxis {}
+    :series [{:name "sales"
+              :type "bar"
+              :data [5 20 36 10 10 20]}]}
+   json/default-object-mapper))

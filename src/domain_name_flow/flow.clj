@@ -4,6 +4,7 @@
             [clojure.core.async.flow-monitor :as mon]
             [domain-name-flow.server :as server]
             [domain-name-flow.processors :as processors]
+            [domain-name-flow.timestamps-db :as ts]
             [domain-name-flow.kafka-intake :as kafka]
             [domain-name-flow.url-generator :as tester]))
 
@@ -31,22 +32,31 @@
                                   :proc (flow/process #'processors/scheduler)}
      :scheduler-2                {:args {:wait 2000}
                                   :proc (flow/process #'processors/scheduler-2)}
+     :resetter                   {:args {}
+                                  :proc (flow/process #'processors/resetter)}
      :domain-name-stats          {:args {}
                                   :proc (flow/process #'processors/domain-name-stats)}
      :rate-calculator-timestamps {:args {:batch-size 10}
                                   :proc (flow/process #'processors/rate-calculator-timestamps)}
      :timestamp-counts           {:args {:time-unit :hour}
                                   :proc (flow/process #'processors/counts-by-time)}
+     :timestamp-manager          {:args {}
+                                  :proc (flow/process #'ts/timestamps-manager)}
+     :timestamp-db               {:args {}
+                                  :proc (flow/process #'ts/timestamp-db-writer)}
      :webserver                  {:args {}
                                   :proc (flow/process #'server/webserver)}}
     :conns [[[:generator :out]                           [:record-handler :records]]
             [[:record-handler :domains]                  [:domain-name-stats :domains]]
             [[:record-handler :timestamps]               [:rate-calculator-timestamps :timestamps]]
             [[:record-handler :timestamps]               [:timestamp-counts :timestamps]]
+            [[:record-handler :timestamps]               [:timestamp-manager :timestamps]]
             [[:record-handler :names]                    [:frequencies-store :names]]
+            [[:resetter :reset]                          [:domain-name-stats :reset]]
             [[:scheduler :push]                          [:domain-name-stats :push]]
             [[:scheduler :push]                          [:frequencies-store :push]]
             [[:scheduler-2 :push]                        [:timestamp-counts :push]]
+            [[:timestamp-manager :db-data]               [:timestamp-db :db-data]]
             [[:domain-name-stats :name-stats]            [:webserver :name-stats]]
             [[:frequencies-store :frequencies]           [:webserver :frequencies]]
             [[:timestamp-counts :time-counts]            [:webserver :time-counts]]

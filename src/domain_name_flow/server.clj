@@ -115,6 +115,7 @@
 
   ([state in msg]
    (do
+
      (case in
        :name-stats   (broadcaster-name-stats (or msg {}))
        :t-stamp-rate (broadcaster-rate msg)
@@ -130,3 +131,5 @@
        :time-counts (-> (tables/time-data-table msg)
                         (broadcaster-timestamps)))
      [state nil])))
+
+;; TODO: websocket broadcaseter component

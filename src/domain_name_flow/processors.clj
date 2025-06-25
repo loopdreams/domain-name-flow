@@ -60,9 +60,17 @@
      :max     (if (> n-len max) n-len max)
      :average (float (/ n-sum n-nxt))}))
 
+(defn resetter
+  ([] {:outs {:reset "send reset signal"}})
+  ([args] args)
+  ([state _tran] state)
+  ([state _id _msg]
+   [state nil]))
+
 (defn domain-name-stats
   ([] {:ins  {:domains "Channel to receive domain strings"
-              :push    "Channel to signal when to push to server component"}
+              :push    "Channel to signal when to push to server component"
+              :reset   "Channel to receive signal to reset counts"}
        :outs {:name-stats "Channel to send stat values"}})
   ([args] (assoc args :name-stats {:n-items 0
                                    :sum     0
@@ -79,6 +87,12 @@
      :push
      [state {:name-stats [(:name-stats state)]}]
 
+     :reset
+     [(assoc state :name-stats {:n-items 0
+                                :sum 0
+                                :min 1000
+                                :max 0
+                                :average 0}) nil]
      [state nil])))
 
 
