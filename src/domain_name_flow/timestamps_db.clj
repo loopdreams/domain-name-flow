@@ -59,40 +59,45 @@ create table timestamp_counts (
 (jt/as (timestamp->dt 1750852815) :hour-of-day)
 
 (defn timestamps-manager
-  ([] {:ins {:timestamps "Channel"}
-       :outs {:db-data "Channel to send data for writing to db"}})
+  ([] {:ins  {:timestamps "Channel to receive timestamps"
+              :push       "Channel to receive push signal"}
+       :outs {:db-data      "Channel to send data for writing to db"
+              :hourly-count "Channel to send count for current hour. Sends on push"}})
   ([args] args)
   ([state _transition] state)
-  ([{:keys [current-day current-hour current-count] :as state} _in msg]
-   (let [dt (timestamp->dt msg)
-         dy (jt/as dt :day-of-month)
-         hr (jt/as dt :hour-of-day)]
-     (cond
-       (not current-day)
-       [(-> state
-            (assoc :ref-timestamp dt)
-            (assoc :current-day dy)
-            (assoc :current-hour hr)
-            (assoc :current-count 1)) nil]
+  ([{:keys [current-day current-hour current-count] :as state} in msg]
+   (case in
+     :push [state {:hourly-count [current-count]}]
+     :timestamps
+     (let [dt                (timestamp->dt msg)
+           dy                (jt/as dt :day-of-month)
+           hr                (jt/as dt :hour-of-day)
+           update-state-hour (fn [state dt hr]
+                               (-> state
+                                   (assoc :ref-timestamp dt)
+                                   (assoc :current-hour hr)
+                                   (assoc :current-count 1)))
+           update-state      (fn [state dt dy hr]
+                               (-> state
+                                   (update-state-hour dt hr)
+                                   (assoc :current-day dy)))]
+       (cond
+         (not current-day)
+         ;; Init
+         [(update-state state dt dy hr)
+          nil]
 
-       (> dy current-day)
-       [(-> state
-            (assoc :ref-timestamp dt)
-            (assoc :current-day dy)
-            (assoc :current-hour hr)
-            (assoc :curent-count 1)
-            {:db-data [{:date (encode-db-key (:ref-timestamp state))
-                        :count current-count}]})]
+         (> dy current-day)
+         [(update-state state dt dy hr)
+          {:db-data [{:date  (encode-db-key (:ref-timestamp state))
+                      :count current-count}]}]
 
-       (> hr current-hour)
-       [(-> state
-            (assoc :ref-timestamp dt)
-            (assoc :current-hour hr)
-            (assoc :current-count 1))
-        {:db-data [{:date (encode-db-key (:ref-timestamp state))
-                    :count current-count}]}]
-       :else
-       [(update state :current-count inc) nil]))))
+         (> hr current-hour)
+         [(update-state-hour state dt hr)
+          {:db-data [{:date  (encode-db-key (:ref-timestamp state))
+                      :count current-count}]}]
+         :else
+         [(update state :current-count inc) nil])))))
 
 (defn timestamp-db-writer
   ([] {:ins {:db-data "channel to receive data to write. Expects {:date x :count x}"}

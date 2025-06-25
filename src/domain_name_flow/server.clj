@@ -62,6 +62,9 @@
 (defn broadcaster-certs [msg]
   (pmap #(ringws/send % (str (h/html [:div {:id "certs"} msg]))) @conns))
 
+(defn broadcaster-hourly-count [msg]
+  (pmap #(ringws/send % (str (h/html [:div {:id "hourly-count"} (format "%d domains received this hour." msg)]))) @conns))
+
 
 
 
@@ -74,15 +77,15 @@
   (compojure/GET "/" req (handler-main req)))
 
 (defn server-start
-  [& args]
+  [args]
   (jetty/run-jetty (-> app
                        (wrap-defaults site-defaults)
                        (wrap-resource "public"))
-                   {:port 3000
+                   {:port (:port args)
                     :join? false}))
 
 (comment
-  (def server (server-start))
+  (def server (server-start {:port 3000}))
   (.stop server)
 
   (pmap  #(ringws/send % (str (h/html [:div {:id "notify"} "YYY"]))) @conns)
@@ -90,20 +93,25 @@
 
 (defn webserver
   ([] {:ins {:name-stats   "Channel to receive stats about domain names"
-             :frequencies  "Channel to receive name frequencies"}})
+             :frequencies  "Channel to receive name frequencies"
+             :hourly-count "Channel to receive hourly timestamp counts"}
+       :params {:port "Port for server"}})
 
-  ([args] (-> args (assoc :server (server-start))))
+  ([args]
+   (let [port (or (:port args) 3000)]
+     (log/info "Server starting on port " port)
+     (-> args (assoc :server (server-start {:port port})))))
 
-  ([state transition]
+  ([{:keys [port] :as state} transition]
    (case transition
 
      ::flow/resume
      (do
        (.stop (:server state))
-       (assoc state :server (server-start)))
+       (assoc state :server (server-start {:port port})))
 
      (::flow/pause ::flow/stop)
-     (do (println state) (.stop (:server state)) state)))
+     (do (log/info "Server stopped") (.stop (:server state)) state)))
 
   ([state in msg]
    (do
@@ -118,7 +126,8 @@
                          (-> (sort-by val certs)
                              (reverse)
                              (tables/frequencies-grid)
-                             (broadcaster-certs)))))
+                             (broadcaster-certs))))
+       :hourly-count (broadcaster-hourly-count msg))
      [state nil])))
 
 ;; TODO: websocket broadcaseter component

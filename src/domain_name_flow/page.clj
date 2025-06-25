@@ -8,10 +8,9 @@
 (defn component-headings [label]
   (case label
     "stats"  "Current Stats"
-    "rate"   "Rate"
     "gtlds"  "gTLDs"
     "cctlds" "ccTLDs"
-    "timestamps" "Domain Counts by Time"
+    "hourly-count" ""
     "certs"  "Certificate Authorities"))
 
 (defn ws-component [label]
@@ -41,7 +40,7 @@
    (into
     [:div {:hx-ext "ws"
            :ws-connect "/"}]
-    (mapv ws-component-collapsible ["stats" "gtlds" "cctlds" "certs"]))
+    (mapv ws-component-collapsible ["stats" "gtlds" "cctlds" "certs" "hourly-count"]))
    [:div {:id "echarts"
           :style "width: 670px; height: 400px;"}]])
 

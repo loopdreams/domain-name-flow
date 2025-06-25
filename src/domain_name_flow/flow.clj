@@ -36,7 +36,7 @@
                                   :proc (flow/process #'ts/timestamps-manager)}
      :timestamp-db               {:args {}
                                   :proc (flow/process #'ts/timestamp-db-writer)}
-     :webserver                  {:args {}
+     :webserver                  {:args {:port 3000}
                                   :proc (flow/process #'server/webserver)}}
     :conns [[[:generator :out]                           [:record-handler :records]]
             [[:record-handler :domains]                  [:domain-name-stats :domains]]
@@ -44,8 +44,10 @@
             [[:record-handler :names]                    [:frequencies-store :names]]
             [[:scheduler :push]                          [:domain-name-stats :push]]
             [[:scheduler :push]                          [:frequencies-store :push]]
+            [[:scheduler :push]                          [:timestamp-manager :push]]
             [[:timestamp-manager :db-data]               [:timestamp-db :db-data]]
             [[:domain-name-stats :name-stats]            [:webserver :name-stats]]
+            [[:timestamp-manager :hourly-count]          [:webserver :hourly-count]]
             [[:frequencies-store :frequencies]           [:webserver :frequencies]]]}))
 
 (defn -main [& args]
