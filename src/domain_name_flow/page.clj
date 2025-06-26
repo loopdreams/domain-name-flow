@@ -6,11 +6,12 @@
 
 (defn component-headings [label]
   (case label
-    "stats"  "Current Stats"
-    "gtlds"  "gTLDs"
-    "cctlds" "ccTLDs"
+    "stats"        "Current Stats"
+    "gtlds"        "gTLDs"
+    "cctlds"       "ccTLDs"
     "hourly-count" ""
-    "certs"  "Certificate Authorities"))
+    "certs"        "Certificate Authorities"
+    "logs"         "Certificate Authority Logs"))
 
 (defn ws-component [label]
   [:div {:class "my-5"}
@@ -42,7 +43,7 @@
     [:div {:hx-ext "ws"
            :ws-connect "/"}]
     [[(ws-component "stats")]
-     (mapv ws-component-collapsible ["gtlds" "cctlds" "certs"])
+     (mapv ws-component-collapsible ["gtlds" "cctlds" "certs" "logs"])
      [(ws-component "hourly-count")]])
    [:div {:id "echarts"
           :style "width: 670px; height: 400px;"}]])

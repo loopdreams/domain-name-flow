@@ -18,16 +18,32 @@
 (defn split-url-string [^String url-string]
   (str/split url-string #"\."))
 
-(defn split-cert-authority-string
-  "Cert Authority info is in the form \"Authority 'log'\""
-  [cert-string]
-  (str/split cert-string #" '"))
+#_(defn split-cert-authority-string
+    "Cert Authority info is in the form \"Authority 'log'\""
+    [cert-string]
+    (str/split cert-string #" '"))
+
+(defn parse-cert-auth-string [^String ct-name]
+  (cond
+    (re-find #"Argon" ct-name)     ["Google" "Argon"]
+    (re-find #"Xenon" ct-name)     ["Google" "Xenon"]
+    (re-find #"Nimbus" ct-name)    ["Cloudflare" "Nimbus"]
+    (re-find #"Yeti" ct-name)      ["Digicert" "Yeti"]
+    (re-find #"Nessie" ct-name)    ["Digicert" "Nessie"]
+    (re-find #"Wyvern" ct-name)    ["Digicert" "Wyvern"]
+    (re-find #"Sphinx" ct-name)    ["Digicert" "Sphinx"]
+    (re-find #"Sabre" ct-name)     ["Sectigo" "Sabre"]
+    (re-find #"Mammoth" ct-name)   ["Sectigo" "Mammoth"]
+    (re-find #"Elephant" ct-name)  ["Sectigo" "Elephant"]
+    (re-find #"Oak" ct-name)       ["Let's Encrypt" "Oak"]
+    (re-find #"TrustAsia" ct-name) ["TrustAsia" "Log"]
+    :else                          [ct-name "?"]))
 
 (defn record-handler
   ([] {:ins      {:records "Channel to receive kafka records"}
-       :outs     {:domains "Channel to send extracted domain names."
+       :outs     {:domains    "Channel to send extracted domain names."
                   :timestamps "Channel to foward timestamps."
-                  :names "Channel to forward tld/cert authority names."}
+                  :names      "Channel to forward tld/cert authority names."}
        :workload :compute})
 
   ([args] args)
@@ -40,12 +56,13 @@
                  ct_name
                  timestamp]}
          (json/read-value msg json/keyword-keys-object-mapper)
-         [domain tld] (split-url-string domain)
-         [c-authority _c-log] (split-cert-authority-string ct_name)]
-     [state {:domains [domain]
+         [domain tld]        (split-url-string domain)
+         [c-authority c-log] (parse-cert-auth-string ct_name)]
+     [state {:domains    [domain]
              :timestamps [timestamp]
-             :names [{:cert c-authority
-                      :tld tld}]}])))
+             :names      [{:cert c-authority
+                           :log  c-log
+                           :tld  tld}]}])))
 
 ;; Average domain names length
 
@@ -100,38 +117,37 @@
 ;; TLD frequency map
 
 
-;; TODO: refactor to just send the frequency maps, and proccess them to hiccup elsewhere
-(defn tld-processor
-  ([] {:ins {:tlds "Channel to receive tld strings"
-             :push "Channel to receive push to websocket signal"}
-       :outs {:g-tld-frequencies "Channel to send gTLD frequencies as hiccup"
-              :cc-tld-frequencies "Channel to send ccTLD frequencies as hiccup"}})
-  ([args] (assoc args :db {}))
-  ([state transition] state)
-  ([state id-input msg]
-   (case id-input
-     :tlds
-     (let [state' (update-in state [:db msg] (fnil inc 0))]
-       [state' nil])
-     :push
-     (let [[gtld cctld] (tables/sort-g-cc-tlds (:db state))]
-       [state {:g-tld-frequencies [gtld]
-               :cc-tld-frequencies [cctld]}])
-     [state nil])))
+#_(defn tld-processor
+    ([] {:ins {:tlds "Channel to receive tld strings"
+               :push "Channel to receive push to websocket signal"}
+         :outs {:g-tld-frequencies "Channel to send gTLD frequencies as hiccup"
+                :cc-tld-frequencies "Channel to send ccTLD frequencies as hiccup"}})
+    ([args] (assoc args :db {}))
+    ([state transition] state)
+    ([state id-input msg]
+     (case id-input
+       :tlds
+       (let [state' (update-in state [:db msg] (fnil inc 0))]
+         [state' nil])
+       :push
+       (let [[gtld cctld] (tables/sort-g-cc-tlds (:db state))]
+         [state {:g-tld-frequencies [gtld]
+                 :cc-tld-frequencies [cctld]}])
+       [state nil])))
 
-(defn cert-authority-processor
-  ([] {:ins {:ct-name "Channel to receive the cert authority names on."
-             :push "Channel to receive push to websocket signal"}
-       :outs {:ct-frequencies "Channel to sent cert authority frequencies"}})
-  ([args] (assoc args :db {}))
-  ([state _transition] state)
-  ([state id-input msg]
-   (case id-input
-     :ct-name
-     (let [state' (update-in state [:db msg] (fnil inc 0))]
-       [state' nil])
-     :push
-     [state {:ct-frequencies [(:db state)]}])))
+#_(defn cert-authority-processor
+    ([] {:ins {:ct-name "Channel to receive the cert authority names on."
+               :push "Channel to receive push to websocket signal"}
+         :outs {:ct-frequencies "Channel to sent cert authority frequencies"}})
+    ([args] (assoc args :db {}))
+    ([state _transition] state)
+    ([state id-input msg]
+     (case id-input
+       :ct-name
+       (let [state' (update-in state [:db msg] (fnil inc 0))]
+         [state' nil])
+       :push
+       [state {:ct-frequencies [(:db state)]}])))
 
 (defn name-frequencies-processor
   "Takes in a name (tld/gtld/cert authority) and adds it to a frequency map.
@@ -144,12 +160,12 @@
                  :cert-db (atom {})))
 
   ([state _transition] state)
-  ([{:keys [tld-db cert-db] :as state} input-id {:keys [cert tld]}]
+  ([{:keys [tld-db cert-db] :as state} input-id {:keys [cert log tld]}]
    (case input-id
      :names
      (do
        (swap! tld-db update tld (fnil inc 0))
-       (swap! cert-db update cert (fnil inc 0))
+       (swap! cert-db update-in [cert log] (fnil inc 0))
        [state nil])
      :push
      [state {:frequencies [{:tlds @tld-db

@@ -28,4 +28,19 @@
      (if (seq cc-tlds) (frequencies-grid (reverse (sort-by val cc-tlds)))
          [:div "Waiting for ccTLDs to appear"])]))
 
+;; Certs db in format {:authority {:loga n :logb n}}
 
+(defn sort-by-val-reverse [m]
+  (reverse (sort-by val m)))
+
+(defn sort-certs-db [db]
+  (let [auth-frequencies (reduce (fn [res [auth logs]]
+                                   (assoc res auth (apply + (vals logs))))
+                                 {} db)
+        log-frequencies (reduce (fn [res [auth logs]]
+                                  (reduce (fn [res [k v]]
+                                            (assoc res (str k " (" auth ")") v))
+                                          res logs))
+                                {} db)]
+    (mapv (comp frequencies-grid sort-by-val-reverse)
+          [auth-frequencies log-frequencies])))

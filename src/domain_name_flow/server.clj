@@ -62,6 +62,9 @@
 (defn broadcaster-certs [msg]
   (pmap #(ringws/send % (str (h/html [:div {:id "certs"} msg]))) @conns))
 
+(defn broadcaster-logs [msg]
+  (pmap #(ringws/send % (str (h/html [:div {:id "logs"} msg]))) @conns))
+
 (defn broadcaster-hourly-count [msg]
   (pmap #(ringws/send % (str (h/html [:div {:id "hourly-count"} (format "%d domains received this hour." msg)]))) @conns))
 
@@ -119,14 +122,13 @@
      (case in
        :name-stats   (broadcaster-name-stats (or msg {}))
        :frequencies  (let [{:keys [tlds certs]} msg
-                           [gtlds cctlds]       (tables/sort-g-cc-tlds tlds)]
+                           [gtlds cctlds]       (tables/sort-g-cc-tlds tlds)
+                           [certs-freq logs-freq] (tables/sort-certs-db certs)]
                        (do
                          (broadcaster-gtlds gtlds)
                          (broadcaster-cctlds cctlds)
-                         (-> (sort-by val certs)
-                             (reverse)
-                             (tables/frequencies-grid)
-                             (broadcaster-certs))))
+                         (broadcaster-certs certs-freq)
+                         (broadcaster-logs logs-freq)))
        :hourly-count (broadcaster-hourly-count msg))
      [state nil])))
 
