@@ -1,6 +1,5 @@
 (ns domain-name-flow.server
-  (:require [ring.middleware.defaults :as middleware]
-            [compojure.core :as compojure]
+  (:require [compojure.core :as compojure]
             [compojure.route :as route]
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
             [ring.util.response :refer [response content-type]]
@@ -41,32 +40,25 @@
                 (.printStackTrace throwable)
                 (log/error (.getMessage throwable)))}})
 
-#_(defn broadcaster [msg]
-    (pmap #(ringws/send % (str (h/html [:div {:id "notify"} (format "Average Domain Name Length: %.2f characters" msg)]))) @conns))
 
-(defn broadcaster-name-stats [msg]
+(defn format-stats-component [msg]
   (let [{:keys [n-items sum max min average]} msg]
-    (pmap #(ringws/send % (str (h/html [:div {:id "stats"}
-                                        [:ul {:class "list-disc list-inside"}
-                                         [:li [:span {:class "border-solid border-1 bg-[#f1e3d3] px-1"} (format "%,2d" n-items)] " domain names received"]
-                                         [:li (format "The average name length is %.2f characters" average)]
-                                         [:li (format "The longest name is %d characters" max)]
-                                         [:li (format "The shortest name is %d characters" min) ]]]))) @conns)))
+    [:ul {:class "list-disc list-inside"}
+     [:li [:span {:class "border-solid border-1 bg-[#f1e3d3] px-1"} (format "%,2d" n-items)] " domain names received"]
+     [:li (format "The average name length is %.2f characters" average)]
+     [:li (format "The longest name is %d characters" max)]
+     [:li (format "The shortest name is %d characters" min)]]))
 
-(defn broadcaster-gtlds [msg]
-  (pmap #(ringws/send % (str (h/html [:div {:id "gtlds"} msg]))) @conns))
+(defn format-hourly-count-component [msg]
+  (format "%d domains received this hour." msg))
 
-(defn broadcaster-cctlds [msg]
-  (pmap #(ringws/send % (str (h/html [:div {:id "cctlds"} msg]))) @conns))
-
-(defn broadcaster-certs [msg]
-  (pmap #(ringws/send % (str (h/html [:div {:id "certs"} msg]))) @conns))
-
-(defn broadcaster-logs [msg]
-  (pmap #(ringws/send % (str (h/html [:div {:id "logs"} msg]))) @conns))
-
-(defn broadcaster-hourly-count [msg]
-  (pmap #(ringws/send % (str (h/html [:div {:id "hourly-count"} (format "%d domains received this hour." msg)]))) @conns))
+(defn ws-broadcaster [msg label]
+  (let [b-cast (fn [label hic conns]
+                 (pmap #(ringws/send % (str (h/html [:div {:id label} hic]))) conns))]
+    (case label
+      "stats"                           (b-cast label (format-stats-component msg) @conns)
+      "hourly-count"                    (b-cast label (format-hourly-count-component msg) @conns)
+      ("gtlds" "cctlds" "certs" "logs") (b-cast label msg @conns))))
 
 
 
@@ -120,16 +112,16 @@
    (do
 
      (case in
-       :name-stats   (broadcaster-name-stats (or msg {}))
+       :name-stats   (ws-broadcaster msg "stats")
        :frequencies  (let [{:keys [tlds certs]} msg
                            [gtlds cctlds]       (tables/sort-g-cc-tlds tlds)
                            [certs-freq logs-freq] (tables/sort-certs-db certs)]
                        (do
-                         (broadcaster-gtlds gtlds)
-                         (broadcaster-cctlds cctlds)
-                         (broadcaster-certs certs-freq)
-                         (broadcaster-logs logs-freq)))
-       :hourly-count (broadcaster-hourly-count msg))
+                         (ws-broadcaster gtlds "gtlds")
+                         (ws-broadcaster cctlds "cctlds")
+                         (ws-broadcaster certs-freq "certs")
+                         (ws-broadcaster logs-freq "logs")))
+       :hourly-count (ws-broadcaster msg "hourly-count"))
      [state nil])))
 
 ;; TODO: websocket broadcaseter component
