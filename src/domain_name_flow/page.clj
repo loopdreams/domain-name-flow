@@ -4,7 +4,6 @@
             [domain-name-flow.timestamps-db :refer [ds echart-spec-create]]
             [jsonista.core :as json]))
 
-
 (defn component-headings [label]
   (case label
     "stats"  "Current Stats"
@@ -22,11 +21,13 @@
     "Waiting for messages..."]])
 
 ;; collapse functionality taken from reddit post - https://www.reddit.com/r/tailwindcss/comments/182mb9j/design_a_collapsible_and_expandable_panel_using/
+;; very hacky/not ideal
 (defn ws-component-collapsible [label]
   [:div {:class "my-5"}
    [:label
     [:input {:class "peer absolute scale-0" :type "checkbox"}]
-    [:h3 {:class "text-xl font-bold cursor-pointer"} (component-headings label)]
+    [:h3 {:class "pr-3 text-xl font-bold cursor-pointer block peer-checked:hidden"} (str  "&#9654; "(component-headings label))]
+    [:h3 {:class "pr-3 text-xl font-bold cursor-pointer hidden peer-checked:block"} (str "&#9660; " (component-headings label))]
     [:span {:class "overflow-hidden transition-all duration-300 hidden peer-checked:block"}
      [:div {:id label
             :hx-swap-oob "beforeend"}
@@ -37,10 +38,12 @@
    [:h1 {:class "text-3xl font-bold text-[#e0afa0]"} "Domain Name Flow"]
    [:p {:id "about"
         :class "py-10"} "Introductory text here..."]
-   (into
+   (reduce into
     [:div {:hx-ext "ws"
            :ws-connect "/"}]
-    (mapv ws-component-collapsible ["stats" "gtlds" "cctlds" "certs" "hourly-count"]))
+    [[(ws-component "stats")]
+     (mapv ws-component-collapsible ["gtlds" "cctlds" "certs"])
+     [(ws-component "hourly-count")]])
    [:div {:id "echarts"
           :style "width: 670px; height: 400px;"}]])
 
