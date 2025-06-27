@@ -123,5 +123,3 @@
                          (ws-broadcaster logs-freq "logs")))
        :hourly-count (ws-broadcaster msg "hourly-count"))
      [state nil])))
-
-;; TODO: websocket broadcaseter component

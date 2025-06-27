@@ -1,7 +1,7 @@
 (ns domain-name-flow.page
   (:require [hiccup2.core :as h]
             [hiccup.page :as hp]
-            [domain-name-flow.timestamps-db :refer [ds echart-spec-create]]
+            [domain-name-flow.timestamps-db :refer [ds echart-spec-create some-ds?]]
             [jsonista.core :as json]))
 
 (defn component-headings [label]
@@ -34,11 +34,29 @@
             :hx-swap-oob "beforeend"}
       "Waiting for messages..."]]]])
 
+(def about-text
+  (let [link-style "font-medium text-[#E8988A] hover:underline"]
+    [:div {:id "about"
+           :class "pt-10"}
+     [:p
+      "This app reads the stream of newly registered domain names that are broadcast by "
+      [:a {:href "https://openintel.nl/data/zonestream/"
+           :class link-style}
+       "zonestream"]
+      ", an open data project by "
+      [:a {:href "https://openintel.nl/"
+           :class link-style} "OpenIntel"]
+      ". The domain names originated in Certificate Transparency logs."]
+     [:br]
+     [:p
+      "More info and source code can be found "
+      [:a {:href "https://github.com/loopdreams"
+           :class link-style} "here."]]]))
+
 (defn main-page-layout [req]
   [:div {:id "main" :class "max-w-2xl m-auto mt-5 p-2"}
    [:h1 {:class "text-3xl font-bold text-[#e0afa0]"} "Domain Name Flow"]
-   [:p {:id "about"
-        :class "py-10"} "Introductory text here..."]
+   about-text
    (reduce into
     [:div {:hx-ext "ws"
            :ws-connect "/"}]
@@ -54,17 +72,14 @@
    [:head
     [:meta {:name "viewport"
             :content "width=device-width, initial-scale=1"}]
-    [:link {:rel "stylesheet"
-            :href "/css/styles.css"}]
-    [:link {:rel "stylesheet"
-            :href "/css/tw.css"}]
-    [:script {:src "https://unpkg.com/htmx.org@2.0.4"
-              :crossorigin "anonymous"}]
-    [:script {:src "https://unpkg.com/htmx-ext-ws@2.0.2"
-              :crossorigin "anonymous"}]
+    [:link {:rel "stylesheet" :href "/css/styles.css"}]
+    [:link {:rel "stylesheet" :href "/css/tw.css"}]
+    [:script {:src "https://unpkg.com/htmx.org@2.0.4" :crossorigin "anonymous"}]
+    [:script {:src "https://unpkg.com/htmx-ext-ws@2.0.2" :crossorigin "anonymous"}]
     [:script {:src "https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"}]]
    [:body (main-page-layout req)
-    [:script {:type "text/javascript"}
-     (str "var myChart = echarts.init(document.getElementById('echarts'));
+    (when (some-ds? ds)
+      [:script {:type "text/javascript"}
+       (str "var myChart = echarts.init(document.getElementById('echarts'));
 
-           myChart.setOption(" (json/write-value-as-string (echart-spec-create ds)) ");")]]))
+           myChart.setOption(" (json/write-value-as-string (echart-spec-create ds)) ");")])]))

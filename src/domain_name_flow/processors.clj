@@ -2,26 +2,11 @@
   (:require [clojure.string :as str]
             [jsonista.core :as json]
             [clojure.core.async :as a]
-            [clojure.core.async.flow :as flow]
-            [domain-name-flow.tables :as tables]
-            [java-time.api :as jt])
-  (:import java.time.Instant))
-
-;; Process functions for:
-;; a. receiving/unpacking data stream
-;;    - separate domain and tld
-;; b. parsing/processing it in various ways:
-;;    - add tld to frequency map
-;;    - count average domain length
+            [clojure.core.async.flow :as flow]))
 
 
 (defn split-url-string [^String url-string]
   (str/split url-string #"\."))
-
-#_(defn split-cert-authority-string
-    "Cert Authority info is in the form \"Authority 'log'\""
-    [cert-string]
-    (str/split cert-string #" '"))
 
 (defn parse-cert-auth-string [^String ct-name]
   (cond
@@ -102,7 +87,8 @@
      [(assoc state :name-stats (update-stats (:name-stats state) msg))]
 
      :push
-     [state {:name-stats [(:name-stats state)]}]
+     [state (when (> (:n-items (:name-stats state)) 0)
+              {:name-stats [(:name-stats state)]})]
 
      :reset
      [(assoc state :name-stats {:n-items 0
@@ -168,8 +154,9 @@
        (swap! cert-db update-in [cert log] (fnil inc 0))
        [state nil])
      :push
-     [state {:frequencies [{:tlds @tld-db
-                            :certs @cert-db}]}])))
+     [state (when (and (seq @tld-db) (seq @cert-db))
+              {:frequencies [{:tlds @tld-db
+                              :certs @cert-db}]})])))
 
 ;; Scheduler - schedule push to websocket (down the line)
 

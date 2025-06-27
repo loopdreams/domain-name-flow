@@ -5,9 +5,7 @@
             [jsonista.core :as json])
   (:import java.time.Instant))
 
-
 ;; Persistently track timestamp data, to help build a picture of domain name registrations over time.
-;; Count hourly timestamp data, in a table with :year :month :day :hour :count
 ;; For current hour, live count the timestamps, then save them to db at end of every hour and restart count
 
 (def db {:dbtype "sqlite"
@@ -21,6 +19,14 @@ create table timestamp_counts (
   date int not null,
   count int not null
 )"]))
+
+(defn db-init []
+  (jdbc/execute! ds ["
+create table timestamp_counts (
+  date int not null,
+  count int not null
+) "]))
+
 
 (comment
 ;;; 1152
@@ -55,9 +61,6 @@ create table timestamp_counts (
 (comment
   (parse-db-key 2024060606))
 
-
-(jt/as (timestamp->dt 1750852815) :hour-of-day)
-
 (defn timestamps-manager
   ([] {:ins  {:timestamps "Channel to receive timestamps"
               :push       "Channel to receive push signal"}
@@ -67,7 +70,7 @@ create table timestamp_counts (
   ([state _transition] state)
   ([{:keys [current-day current-hour current-count] :as state} in msg]
    (case in
-     :push [state {:hourly-count [current-count]}]
+     :push [state (when current-count {:hourly-count [current-count]})]
      :timestamps
      (let [dt                (timestamp->dt msg)
            dy                (jt/as dt :day-of-month)
@@ -102,7 +105,7 @@ create table timestamp_counts (
 (defn timestamp-db-writer
   ([] {:ins {:db-data "channel to receive data to write. Expects {:date x :count x}"}
        :workload :io})
-  ([args] (assoc args :ds ds))
+  ([args] (do (db-init) (assoc args :ds ds)))
   ([state _transition] state)
   ([{:keys [ds] :as state} _in msg]
    (when (seq msg)
@@ -134,6 +137,9 @@ create table timestamp_counts (
                                  data)]
     (echart-spec data-series-tuples)))
 
+(defn some-ds? [ds]
+  (< 0 (count (sql/query ds ["select * from timestamp_counts"]))))
 
 (comment
-  (echart-spec-create ds))
+  (some-ds? ds)
+  (count (sql/query ds ["select * from timestamp_counts"])))

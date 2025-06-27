@@ -1,9 +1,13 @@
 (ns domain-name-flow.kafka-intake
-  (:require [clojure.core.async :as a]
-            [clojure.core.async.flow :as flow])
-  (:import org.apache.kafka.clients.consumer.KafkaConsumer
-           (java.time Duration)
-           (org.apache.kafka.common.serialization StringDeserializer)))
+  (:require
+   [clojure.core.async :as a]
+   [clojure.core.async.flow :as flow]
+   [clojure.string :as str]
+   [jsonista.core :as json])
+  (:import
+   (java.time Duration)
+   (org.apache.kafka.clients.consumer KafkaConsumer)
+   (org.apache.kafka.common.serialization StringDeserializer)))
 
 (defn build-consumer
   [bootstrap-server]
@@ -68,3 +72,20 @@
   ;; Transform
   ([state in msg]
    [state (when (= in :records) {:out [msg]})]))
+
+
+;; CT Log Names
+
+
+(comment
+  (defn extract-descs [log] (mapv :description log))
+  (let [logs (-> (slurp "ct_logs/goog_log_list_26_june.json")
+                 (json/read-value  json/keyword-keys-object-mapper)
+                 :operators)]
+    (spit "ct_logs/log_descriptions_26_june.txt"
+          (->> (reduce (fn [res log]
+                         (into res (extract-descs (:logs log))))
+                       []
+                       logs)
+               (drop-last)
+               (str/join "\n")))))
