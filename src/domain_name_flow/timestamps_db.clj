@@ -65,7 +65,8 @@ create table timestamp_counts (
   ([] {:ins  {:timestamps "Channel to receive timestamps"
               :push       "Channel to receive push signal"}
        :outs {:db-data      "Channel to send data for writing to db"
-              :hourly-count "Channel to send count for current hour. Sends on push"}})
+              :hourly-count "Channel to send count for current hour. Sends on push"
+              :backup-signal "Signal for other processes to also write data (hourly)"}})
   ([args] args)
   ([state _transition] state)
   ([{:keys [current-day current-hour current-count] :as state} in msg]
@@ -98,7 +99,8 @@ create table timestamp_counts (
          (> hr current-hour)
          [(update-state-hour state dt hr)
           {:db-data [{:date  (encode-db-key (:ref-timestamp state))
-                      :count current-count}]}]
+                      :count current-count}]
+           :backup-signal :backup-now}]
          :else
          [(update state :current-count inc) nil])))))
 

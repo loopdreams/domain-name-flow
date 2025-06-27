@@ -10,7 +10,7 @@
             [ring.websocket :as ringws]
             [ring.websocket.protocols :as ws]
             [clojure.core.async :as a :refer [thread <!!]]
-            [clojure.tools.logging :as log]
+            [taoensso.telemere :as tel]
             [domain-name-flow.page :as page]
             [domain-name-flow.tables :as tables]))
 
@@ -25,20 +25,19 @@
 (defn ws-handler [upgrade-request]
   {:ring.websocket/listener
    {:on-open (fn on-connect [ws]
-               (log/info "connect" (:headers upgrade-request))
+               (tel/log! {:level :info :msg (str "ws-connect " (:headers upgrade-request))})
                (swap! conns conj ws)
                (keep-alive ws))
     :on-message (fn on-text [ws text-message]
-                  (log/info "received msg:" text-message)
                   (ringws/send ws (str "echo: " text-message)))
     :on-close (fn on-close [ws status-code reason]
-                (swap! conns disj ws)
-                (log/info "closed" status-code reason))
-    :on-pong (fn on-pong [_ _]
-               (log/debug "pong"))
+                (swap! conns disj ws))
+    :on-pong (fn on-pong [_ _])
     :on-error (fn on-error [_ throwable]
                 (.printStackTrace throwable)
-                (log/error (.getMessage throwable)))}})
+                (tel/log! {:level :warn :msg (.getMessage throwable)}))}})
+
+
 
 
 (defn format-stats-component [msg]
@@ -94,7 +93,7 @@
 
   ([args]
    (let [port (or (:port args) 3000)]
-     (log/info "Server starting on port " port)
+     (tel/log! {:level :info :msg (str "Server starting on port " port)})
      (-> args (assoc :server (server-start {:port port})))))
 
   ([{:keys [port] :as state} transition]
@@ -106,7 +105,7 @@
        (assoc state :server (server-start {:port port})))
 
      (::flow/pause ::flow/stop)
-     (do (log/info "Server stopped") (.stop (:server state)) state)))
+     (do (tel/log! {:level :info :msg "Stopping server"}) (.stop (:server state)) state)))
 
   ([state in msg]
    (do

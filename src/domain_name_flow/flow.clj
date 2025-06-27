@@ -26,11 +26,11 @@
      ;;                                     ;; TODO: delete later
      ;;                                     :wait       500}
      ;;                              :proc (flow/process #'kafka/source)}
-     :frequencies-store          {:args {}
+     :frequencies-store          {:args {:backup-file "db/name_frequencies.edn"}
                                   :proc (flow/process #'processors/name-frequencies-processor)}
      :scheduler                  {:args {:wait 1000}
                                   :proc (flow/process #'processors/scheduler)}
-     :domain-name-stats          {:args {}
+     :domain-name-stats          {:args {:backup-file "db/name_stats.edn"}
                                   :proc (flow/process #'processors/domain-name-stats)}
      :timestamp-manager          {:args {}
                                   :proc (flow/process #'ts/timestamps-manager)}
@@ -46,8 +46,10 @@
             [[:scheduler :push]                          [:frequencies-store :push]]
             [[:scheduler :push]                          [:timestamp-manager :push]]
             [[:timestamp-manager :db-data]               [:timestamp-db :db-data]]
-            [[:domain-name-stats :name-stats]            [:webserver :name-stats]]
+            [[:timestamp-manager :backup-signal]         [:frequencies-store :backup]]
+            [[:timestamp-manager :backup-signal]         [:domain-name-stats :backup]]
             [[:timestamp-manager :hourly-count]          [:webserver :hourly-count]]
+            [[:domain-name-stats :name-stats]            [:webserver :name-stats]]
             [[:frequencies-store :frequencies]           [:webserver :frequencies]]]}))
 
 (defn -main [& args]
