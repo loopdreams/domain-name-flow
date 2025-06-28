@@ -74,12 +74,10 @@
             :content "width=device-width, initial-scale=1"}]
     [:link {:rel "stylesheet" :href "/css/styles.css"}]
     [:link {:rel "stylesheet" :href "/css/tw.css"}]
-    [:script {:src "https://unpkg.com/htmx.org@2.0.4" :crossorigin "anonymous"}]
-    [:script {:src "https://unpkg.com/htmx-ext-ws@2.0.2" :crossorigin "anonymous"}]
-    [:script {:src "https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"}]]
-   [:body (main-page-layout req)
-    (when (some-ds? ds)
-      [:script {:type "text/javascript"}
-       (str "var myChart = echarts.init(document.getElementById('echarts'));
+    [:script {:type "text/javascript" :src "/js/main.js"}]
+    [:body (main-page-layout req)
+     (when (some-ds? ds)
+       [:script {:type "text/javascript"}
+        (str "var myChart = echarts.init(document.getElementById('echarts'));
 
-           myChart.setOption(" (json/write-value-as-string (echart-spec-create ds)) ");")])]))
+           myChart.setOption(" (json/write-value-as-string (echart-spec-create ds)) ");")])]]))
