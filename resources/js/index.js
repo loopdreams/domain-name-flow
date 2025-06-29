@@ -16,7 +16,11 @@ import { CanvasRenderer } from 'echarts/renderers';
 echarts.use([
   LineChart,
   TooltipComponent,
+  DataZoomComponent,
   GridComponent,
   DatasetComponent,
   CanvasRenderer
 ]);
+
+
+export default echarts;

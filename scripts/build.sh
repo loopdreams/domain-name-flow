@@ -3,4 +3,5 @@
 npm install && \
 npx tailwindcss -i ./resources/public/css/styles.css -o ./resources/public/css/tw.css && \
 npx webpack --config webpack.config.js && \
+npx shadow-cljs compile chart && \
 clj -T:build uber

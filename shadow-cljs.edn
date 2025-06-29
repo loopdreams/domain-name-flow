@@ -1,0 +1,7 @@
+{:source-paths ["src"]
+ :dependencies [[cljs-http "0.1.48"]]
+ :builds
+ {:chart {:target :browser
+          :output-dir "resources/public/js"
+          :asset-path "/js"
+          :modules {:main {:entries [domain-name-flow.chart]}}}}}

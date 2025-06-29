@@ -12,7 +12,9 @@
             [clojure.core.async :as a :refer [thread <!!]]
             [taoensso.telemere :as tel]
             [domain-name-flow.page :as page]
-            [domain-name-flow.tables :as tables]))
+            [domain-name-flow.tables :as tables]
+            [domain-name-flow.timestamps-db :as db]
+            [jsonista.core :as json]))
 
 (defn keep-alive [socket]
   (thread
@@ -60,15 +62,20 @@
       ("gtlds" "cctlds" "certs" "logs") (b-cast label msg @conns))))
 
 
-
-
 (defn handler-main [req]
   (if (jetty/ws-upgrade-request? req)
     (ws-handler req)
     (page/main-page req)))
 
+(defn get-timestamp-counts [_req]
+  (let [data (db/timestamp-counts-tuples)]
+    {:status 200
+     :headers {"Content-Type" "application/json"}
+     :body (json/write-value-as-string data)}))
+
 (compojure/defroutes app
-  (compojure/GET "/" req (handler-main req)))
+  (compojure/GET "/" req (handler-main req))
+  (compojure/GET "/timestamp-counts" req (get-timestamp-counts req)))
 
 (defn server-start
   [args]

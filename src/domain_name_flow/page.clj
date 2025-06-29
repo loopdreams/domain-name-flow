@@ -69,15 +69,11 @@
 
 (defn main-page [req]
   (hp/html5
-   [:head
-    [:meta {:name "viewport"
-            :content "width=device-width, initial-scale=1"}]
-    [:link {:rel "stylesheet" :href "/css/styles.css"}]
-    [:link {:rel "stylesheet" :href "/css/tw.css"}]
-    [:script {:type "text/javascript" :src "/js/main.js"}]
-    [:body (main-page-layout req)
-     (when (some-ds? ds)
-       [:script {:type "text/javascript"}
-        (str "var myChart = echarts.init(document.getElementById('echarts'));
+      [:head
+       [:meta {:name "viewport"
+               :content "width=device-width, initial-scale=1"}]
+       [:link {:rel "stylesheet" :href "/css/styles.css"}]
+       [:link {:rel "stylesheet" :href "/css/tw.css"}]]
 
-           myChart.setOption(" (json/write-value-as-string (echart-spec-create ds)) ");")])]]))
+      [:body (main-page-layout req)
+       [:script {:src "/js/main.js"}]]))

@@ -37,7 +37,7 @@ create table timestamp_counts (
           dy (parse-long (subs s 6 8))]
       (and (> 25 hr)
            (< 0 dy 32))))
-  (doseq [n (filter filter-valid (range 2025051010 2025062512))]
+  (doseq [n (filter filter-valid (range 2025061010 2025062512))]
     (sql/insert! ds "timestamp_counts" {:date n :count (rand-nth (range 4000 6000))}))
   (count (sql/query ds ["select * from timestamp_counts"])))
 
@@ -100,7 +100,7 @@ create table timestamp_counts (
          [(update-state-hour state dt hr)
           {:db-data [{:date  (encode-db-key (:ref-timestamp state))
                       :count current-count}]
-           :backup-signal :backup-now}]
+           :backup-signal [:backup-now]}]
          :else
          [(update state :current-count inc) nil])))))
 
@@ -115,32 +115,24 @@ create table timestamp_counts (
    [state nil]))
 
 
-;; Chart
+;; Chart data
 
 (defn twentyfour-hr-window [last-entry]
   (-> (jt/local-date-time (first last-entry))
       (jt/minus (jt/days 1))
       str))
 
-(defn echart-spec [data-series]
-  {:xAxis    {:type "time"}
-   :tooltip {}
-   :yAxis    {:name "Domain Counts (Hourly)"}
-   :series   {:type "line"
-              :data data-series}
-   :dataZoom [{:type       "slider"
-               :startValue (twentyfour-hr-window (last data-series))
-               :filterMode "none"}]})
-
-(defn echart-spec-create [ds]
+(defn timestamp-counts-tuples []
   (let [data (sql/query ds ["select * from timestamp_counts"])
-        data-series-tuples (mapv (fn [{:timestamp_counts/keys [date count]}]
-                                   [(parse-db-key date) count])
-                                 data)]
-    (echart-spec data-series-tuples)))
+        series (mapv (fn [{:timestamp_counts/keys [date count]}]
+                       [(parse-db-key date) count])
+                     data)]
+    {:series series
+     :offset (twentyfour-hr-window (last series))}))
 
-(defn some-ds? [ds]
-  (< 0 (count (sql/query ds ["select * from timestamp_counts"]))))
+
+#_(defn some-ds? [ds]
+    (< 0 (count (sql/query ds ["select * from timestamp_counts"]))))
 
 (comment
   (some-ds? ds)
