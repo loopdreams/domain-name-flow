@@ -4,4 +4,8 @@
  {:chart {:target :browser
           :output-dir "resources/public/js"
           :asset-path "/js"
-          :modules {:main {:entries [domain-name-flow.chart]}}}}}
+          :modules {:main {:entries [domain-name-flow.chart]}}
+          :js-options
+          {:js-provider :external
+           :external-index "resources/js/shadow.js"
+           :external-index-format :esm}}}}

@@ -70,10 +70,9 @@
 (defn main-page [req]
   (hp/html5
       [:head
-       [:meta {:name "viewport"
-               :content "width=device-width, initial-scale=1"}]
+       [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
        [:link {:rel "stylesheet" :href "/css/styles.css"}]
        [:link {:rel "stylesheet" :href "/css/tw.css"}]]
-
       [:body (main-page-layout req)
-       [:script {:src "/js/main.js"}]]))
+       [:script {:src "/js/main.js" :defer true}]
+       [:script {:src "/js/libs.js"}]]))

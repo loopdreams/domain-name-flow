@@ -6,6 +6,6 @@ module.exports = {
   ],
   output: {
     path: path.resolve(__dirname, 'resources/public', 'js'),
-    filename: "main.js"
-  },
+    filename: "libs.js"
+  },  
 };

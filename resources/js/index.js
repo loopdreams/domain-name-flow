@@ -1,6 +1,7 @@
 import * as echarts from 'echarts/core';
-import 'htmx.org';
-import 'htmx-ext-ws';
+import './htmx.js';
+import 'htmx-ext-ws/dist/ws.js';
+import './shadow.js';
 
 import { LineChart } from 'echarts/charts';
 
@@ -16,11 +17,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 echarts.use([
   LineChart,
   TooltipComponent,
-  DataZoomComponent,
   GridComponent,
   DatasetComponent,
   CanvasRenderer
 ]);
-
-
-export default echarts;
