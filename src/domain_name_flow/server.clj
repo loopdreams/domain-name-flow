@@ -27,7 +27,7 @@
 (defn ws-handler [upgrade-request]
   {:ring.websocket/listener
    {:on-open (fn on-connect [ws]
-               (tel/log! {:level :info :msg (str "ws-connect " (:headers upgrade-request))})
+               (tel/log! {:level :info :msg "ws-connect"})
                (swap! conns conj ws)
                (keep-alive ws))
     :on-message (fn on-text [ws text-message]
@@ -36,7 +36,6 @@
                 (swap! conns disj ws))
     :on-pong (fn on-pong [_ _])
     :on-error (fn on-error [_ throwable]
-                (.printStackTrace throwable)
                 (tel/log! {:level :warn :msg (.getMessage throwable)}))}})
 
 
@@ -45,13 +44,15 @@
 (defn format-stats-component [msg]
   (let [{:keys [n-items sum max min average]} msg]
     [:ul {:class "list-disc list-inside"}
-     [:li [:span {:class "border-solid border-1 bg-[#f1e3d3] px-1"} (format "%,2d" n-items)] " domain names received"]
+     [:li [:span {:class "border-solid border-1 bg-[#D0BDF4] px-1"} (format "%,2d" n-items)] " domain names received"]
      [:li (format "The average name length is %.2f characters" average)]
      [:li (format "The longest name is %d characters" max)]
-     [:li (format "The shortest name is %d characters" min)]]))
+     [:li (if (= min 1)
+            (format "The shortest name is %d character" min)
+            (format "The shortest name is %d characters" min))]]))
 
 (defn format-hourly-count-component [msg]
-  (format "%d domains received this hour." msg))
+  (format "%,2d domains received this hour." msg))
 
 (defn ws-broadcaster [msg label]
   (let [b-cast (fn [label hic conns]

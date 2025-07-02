@@ -1,14 +1,4 @@
 @import "tailwindcss";
-body {
-    /* max-width: 700px; */
-    /* margin: auto; */
-    background-color: #f4f3ee;
-    color: #463f3a;
-}
-
-.title {
-    color: #e0afa0;
-}
 
 .tld-box {
     display: flex;
