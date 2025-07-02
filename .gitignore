@@ -21,3 +21,7 @@ pom.xml.asc
 /node_modules/
 /resources/public/css/tw.css
 /db/
+/.shadow-cljs/
+/ct_logs/
+/resources/js/shadow.js
+/resources/public/js/
