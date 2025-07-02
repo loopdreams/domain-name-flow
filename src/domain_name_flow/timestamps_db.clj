@@ -2,6 +2,7 @@
   (:require [java-time.api :as jt]
             [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]
+            [clojure.java.io :as io]
             [jsonista.core :as json])
   (:import java.time.Instant))
 
@@ -20,16 +21,18 @@ create table timestamp_counts (
   count int not null
 )"]))
 
+
 (defn db-init []
-  (jdbc/execute! ds ["
+  (when-not (and (.exists (io/as-file "db/domain_name_flow.db"))
+                 (seq (jdbc/execute! ds ["SELECT name FROM sqlite_master WHERE type='table' AND name='timestamp_counts'"])))
+    (jdbc/execute! ds ["
 create table timestamp_counts (
   date int not null,
   count int not null
-) "]))
+) "])))
 
 
 (comment
-;;; 1152
 
   (defn filter-valid [n]
     (let [s (str n)
@@ -107,7 +110,7 @@ create table timestamp_counts (
 (defn timestamp-db-writer
   ([] {:ins {:db-data "channel to receive data to write. Expects {:date x :count x}"}
        :workload :io})
-  ([args] (do (db-init) (assoc args :ds ds)))
+  ([args] (db-init) (assoc args :ds ds))
   ([state _transition] state)
   ([{:keys [ds] :as state} _in msg]
    (when (seq msg)
@@ -115,7 +118,7 @@ create table timestamp_counts (
    [state nil]))
 
 
-;; Chart data
+;; DB Chart data
 
 (defn twentyfour-hr-window [last-entry]
   (-> (jt/local-date-time (first last-entry))
