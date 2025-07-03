@@ -16,8 +16,8 @@
                                 :topic      "newly_registered_domain"
                                 ;; The 'wait' here is for when using the test url generator
                                 :wait       500}
-                         :proc (flow/process #'kafka/source)}
-     ;; :proc (flow/process #'tester/test-source)}
+                         ;; :proc (flow/process #'kafka/source)}
+                         :proc (flow/process #'tester/test-source)}
      :record-handler    {:args {:backup-file "db/name_stats.edn"}
                          :proc (flow/process #'processors/record-handler)}
      :frequencies-store {:args {:backup-file "db/name_frequencies.edn"}
