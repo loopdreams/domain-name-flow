@@ -73,19 +73,3 @@
   ([state in msg]
    [state (when (= in :records) {:out [msg]})]))
 
-
-;; CT Log Names
-
-
-(comment
-  (defn extract-descs [log] (mapv :description log))
-  (let [logs (-> (slurp "ct_logs/goog_log_list_26_june.json")
-                 (json/read-value  json/keyword-keys-object-mapper)
-                 :operators)]
-    (spit "ct_logs/log_descriptions_26_june.txt"
-          (->> (reduce (fn [res log]
-                         (into res (extract-descs (:logs log))))
-                       []
-                       logs)
-               (drop-last)
-               (str/join "\n")))))

@@ -17,5 +17,4 @@
 (def myChart (. echarts (init (. js/document (getElementById "echarts")))))
 
 (go (let [resp (<! (http/get "./timestamp-counts" {}))]
-      (prn (-> resp :body))
       (. myChart (setOption (clj->js (echart-spec (-> resp :body)))))))

@@ -1,8 +1,6 @@
 (ns domain-name-flow.server
   (:require [compojure.core :as compojure]
-            [compojure.route :as route]
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
-            [ring.util.response :refer [response content-type]]
             [ring.middleware.resource :refer [wrap-resource]]
             [clojure.core.async.flow :as flow]
             [ring.adapter.jetty9 :as jetty]
@@ -26,17 +24,17 @@
 
 (defn ws-handler [upgrade-request]
   {:ring.websocket/listener
-   {:on-open (fn on-connect [ws]
-               (tel/log! {:level :info :msg "ws-connect"})
-               (swap! conns conj ws)
-               (keep-alive ws))
+   {:on-open    (fn on-connect [ws]
+                  (tel/log! {:level :info :msg "ws-connect"})
+                  (swap! conns conj ws)
+                  (keep-alive ws))
     :on-message (fn on-text [ws text-message]
                   (ringws/send ws (str "echo: " text-message)))
-    :on-close (fn on-close [ws status-code reason]
-                (swap! conns disj ws))
-    :on-pong (fn on-pong [_ _])
-    :on-error (fn on-error [_ throwable]
-                (tel/log! {:level :warn :msg (.getMessage throwable)}))}})
+    :on-close   (fn on-close [ws status-code reason]
+                  (swap! conns disj ws))
+    :on-pong    (fn on-pong [_ _])
+    :on-error   (fn on-error [_ throwable]
+                  (tel/log! {:level :warn :msg (.getMessage throwable)}))}})
 
 
 
@@ -88,10 +86,8 @@
 
 (comment
   (def server (server-start {:port 3000}))
-  (.stop server)
+  (.stop server))
 
-  (pmap  #(ringws/send % (str (h/html [:div {:id "notify"} "YYY"]))) @conns)
-  (count @conns))
 
 (defn webserver
   ([] {:ins {:name-stats   "Channel to receive stats about domain names"

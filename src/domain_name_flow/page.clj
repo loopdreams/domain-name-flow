@@ -15,11 +15,9 @@
 
 (defn ws-component [label]
   [:div {:class "my-5"}
-   [:h3 {:class "text-xl font-bold"}
-    (component-headings label)]
-   [:div {:id label
-          :hx-swap-oob "beforeend"}
-    "Waiting for messages..."]])
+   [:h3 {:class "text-xl font-bold"} (component-headings label)]
+   [:div {:id label :hx-swap-oob "beforeend"}
+    "Waiting for information from server..."]])
 
 ;; collapse functionality taken from reddit post - https://www.reddit.com/r/tailwindcss/comments/182mb9j/design_a_collapsible_and_expandable_panel_using/
 ;; very hacky/not ideal
@@ -27,33 +25,25 @@
   [:div {:class "my-5"}
    [:label
     [:input {:class "peer absolute scale-0" :type "checkbox"}]
-    [:h3 {:class "pr-3 text-xl font-bold cursor-pointer block peer-checked:hidden"} (str  "&#9654; "(component-headings label))]
+    [:h3 {:class "pr-3 text-xl font-bold cursor-pointer block peer-checked:hidden"} (str "&#9654; " (component-headings label))]
     [:h3 {:class "pr-3 text-xl font-bold cursor-pointer hidden peer-checked:block"} (str "&#9660; " (component-headings label))]
     [:span {:class "overflow-hidden transition-all duration-300 hidden peer-checked:block"}
-     [:div {:id label
-            :hx-swap-oob "beforeend"}
-      "Waiting for messages..."]]]])
+     [:div {:id label :hx-swap-oob "beforeend"}
+      "Waiting for information from server..."]]]])
 
 (def about-text
   (let [link-style "font-medium text-[#8458B3] hover:underline"]
-    [:div {:id "about"
-           :class "pt-10"}
-     [:p
-      "This page reads the stream of newly registered domain names that are broadcast by "
-      [:a {:href "https://openintel.nl/data/zonestream/"
-           :class link-style}
-       "zonestream"]
+    [:div {:id "about" :class "pt-10"}
+     [:p "This page reads the stream of newly registered domain names that are broadcast by "
+      [:a {:href "https://openintel.nl/data/zonestream/" :class link-style} "zonestream"]
       ", an open data project by "
-      [:a {:href "https://openintel.nl/"
-           :class link-style} "OpenIntel"]
+      [:a {:href "https://openintel.nl/" :class link-style} "OpenIntel"]
       ". The domain names originated in Certificate Transparency logs."]
      [:br]
      [:p "The domains are then split, processed further, and grouped by things like top-level domain or the number of domains registered per hour."]
      [:br]
-     [:p
-      "More info and source code can be found "
-      [:a {:href "https://github.com/loopdreams"
-           :class link-style} "here."]]]))
+     [:p "More info and source code can be found "
+      [:a {:href "https://github.com/loopdreams" :class link-style} "here."]]]))
 
 ;; Colours - https://www.behance.net/gallery/80191113/Minimalist-Color-Palettes-are-back#
 (defn main-page-layout [req]

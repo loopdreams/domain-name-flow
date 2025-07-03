@@ -28,10 +28,9 @@
      (if (seq cc-tlds) (frequencies-grid (reverse (sort-by val cc-tlds)))
          [:div "Waiting for ccTLDs to appear"])]))
 
-;; Certs db in format {:authority {:loga n :logb n}}
+;; Certs db in format {:authority {:log1 n :log2 n ...}}
 
-(defn sort-by-val-reverse [m]
-  (reverse (sort-by val m)))
+(defn sort-by-val-reverse [m] (reverse (sort-by val m)))
 
 (defn sort-certs-db [db]
   (let [auth-frequencies (reduce (fn [res [auth logs]]

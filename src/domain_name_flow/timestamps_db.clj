@@ -6,21 +6,9 @@
             [jsonista.core :as json])
   (:import java.time.Instant))
 
-;; Persistently track timestamp data, to help build a picture of domain name registrations over time.
-;; For current hour, live count the timestamps, then save them to db at end of every hour and restart count
-
-(def db {:dbtype "sqlite"
-         :dbname "db/domain_name_flow.db"})
+(def db {:dbtype "sqlite" :dbname "db/domain_name_flow.db"})
 
 (def ds (jdbc/get-datasource db))
-
-(comment
-  (jdbc/execute! ds ["
-create table timestamp_counts (
-  date int not null,
-  count int not null
-)"]))
-
 
 (defn db-init []
   (when-not (and (.exists (io/as-file "db/domain_name_flow.db"))
@@ -31,18 +19,6 @@ create table timestamp_counts (
   count int not null
 ) "])))
 
-
-(comment
-
-  (defn filter-valid [n]
-    (let [s (str n)
-          hr (parse-long (subs s 8 10))
-          dy (parse-long (subs s 6 8))]
-      (and (> 25 hr)
-           (< 0 dy 32))))
-  (doseq [n (filter filter-valid (range 2025061010 2025062512))]
-    (sql/insert! ds "timestamp_counts" {:date n :count (rand-nth (range 4000 6000))}))
-  (count (sql/query ds ["select * from timestamp_counts"])))
 
 (defn add-to-db! [ds {:keys [date count] :as data}]
   (sql/insert! ds "timestamp_counts" {:date date :count count}))
@@ -133,10 +109,5 @@ create table timestamp_counts (
     {:series series
      :offset (twentyfour-hr-window (last series))}))
 
-
-#_(defn some-ds? [ds]
-    (< 0 (count (sql/query ds ["select * from timestamp_counts"]))))
-
 (comment
-  (some-ds? ds)
   (count (sql/query ds ["select * from timestamp_counts"])))
