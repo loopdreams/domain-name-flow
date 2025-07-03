@@ -2,6 +2,8 @@
 
 An experimental web app to try out the recently released [flow](https://clojure.github.io/core.async/clojure.core.async.flow.html) clojure async library.
 
+View live (hopefully) [here.](https://eoin.site/fl)
+
 The app reads the stream of domain names as broadcast by [zonestream](https://openintel.nl/data/zonestream/), an open data project by [OpenIntel](https://openintel.nl/data/zonestream/). 
 
 I came across the zonestream data feed from a great [presentation by Raffaele Sommese](https://www.caida.org/workshops/aims/2502/slides/gmi_aims_5_rsommese.pdf) on DNS abuse. 
@@ -13,8 +15,10 @@ Then, using the 'flow' architecture, various processes chop up this data and pre
 - Country code top-level domain (ccTLD) frequencies 
 - Certificate Transparency log frequencies
 
-These are fairly simple operations, simply intended to explore working with 'flow'. Ideally, you could perform more in-depth live analysis, such as passing the data to a model to try detect malicious domains. The idea with 'flow' is that this can all be done asynchronously in an easy-to-define process 'map'. 
+These are fairly simple operations, intended to explore working with 'flow'. Ideally, you could perform more in-depth live analysis, such as passing the data to a model to try detect malicious domains. The idea with 'flow' is that this can all be done via separate processes in an easy-to-define process 'map'. 
 
-This project also uses [htmx](https://htmx.org/), mainly because it was quick and easy (simple?) to set up. It also uses [echarts](https://echarts.apache.org/en/index.html) for the chart.
+This project also uses [htmx](https://htmx.org/), mainly because it was quick and easy to set up. It also uses [echarts](https://echarts.apache.org/en/index.html) for the chart.
 
 The main entry point is the `flow.clj` namespace. 
+
+You can build it with the build.sh file in the scripts folder (requires npm & clojure).
