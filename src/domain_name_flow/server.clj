@@ -31,10 +31,11 @@
     :on-message (fn on-text [ws text-message]
                   (ringws/send ws (str "echo: " text-message)))
     :on-close   (fn on-close [ws status-code reason]
+                  (tel/log! {:level :warn :msg "ws-disconnect"})
                   (swap! conns disj ws))
     :on-pong    (fn on-pong [_ _])
     :on-error   (fn on-error [_ throwable]
-                  (tel/log! {:level :warn :msg (.getMessage throwable)}))}})
+                  (tel/log! {:level :warn :msg "ws-disconnect/error"}))}})
 
 
 

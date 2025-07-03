@@ -27,18 +27,24 @@
     (re-find #"TrustAsia" ct-name) ["TrustAsia" "Log"]
     :else                          [ct-name "?"]))
 
+(defn add-previous-stop-time [{:keys [backup-file] :as args}]
+  (when (.exists (io/as-file backup-file))
+    (let [{:keys [timestamp]} (edn/read-string (slurp backup-file))]
+      (assoc args :previous-stoptime (-> timestamp (.getTime) (/ 1000) long)))))
+
 (defn record-handler
   ([] {:ins      {:records "Channel to receive kafka records"}
        :outs     {:domains    "Channel to send extracted domain names."
                   :timestamps "Channel to foward timestamps."
                   :names      "Channel to forward tld/cert authority names."}
-       :workload :compute})
+       :params   {:backup-file "File with system backup info. Used to get previous stop time."}
+       :workload :mixed})
 
-  ([args] args)
+  ([args] (add-previous-stop-time args))
 
   ([state _transition] state)
 
-  ([state _input-id msg]
+  ([{:keys [previous-stoptime] :as state} _input-id msg]
    (let [{:keys [domain
                  cert_index
                  ct_name
@@ -46,11 +52,15 @@
          (json/read-value msg json/keyword-keys-object-mapper)
          [domain tld]        (split-url-string domain)
          [c-authority c-log] (parse-cert-auth-string ct_name)]
-     [state {:domains    [domain]
-             :timestamps [timestamp]
-             :names      [{:cert c-authority
-                           :log  c-log
-                           :tld  tld}]}])))
+     (if (or (not previous-stoptime)
+             (> timestamp previous-stoptime)) ;; don't double-count (a bit pointless here, doesn't work like this in practice)
+       [state {:domains    [domain]
+               :timestamps [timestamp]
+               :names      [{:cert c-authority}]
+               :log        c-log
+               :tld        tld}]
+       [state nil]))))
+
 
 ;; Average domain names length
 
@@ -65,12 +75,6 @@
      :max     (if (> n-len max) n-len max)
      :average (float (/ n-sum n-nxt))}))
 
-(defn resetter
-  ([] {:outs {:reset "send reset signal"}})
-  ([args] args)
-  ([state _tran] state)
-  ([state _id _msg]
-   [state nil]))
 
 (defn domain-name-stats
   ([] {:ins    {:domains "Channel to receive domain strings"
@@ -159,8 +163,6 @@
      [state (when (and (seq @tld-db) (seq @cert-db))
               {:frequencies [{:tlds @tld-db
                               :certs @cert-db}]})])))
-
-
 
 ;; Scheduler - schedule push to websocket (down the line)
 
