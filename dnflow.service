@@ -1,0 +1,18 @@
+[Unit]
+Description=Domain Name Flow Web Application
+After=syslog.target network.target
+
+[Service]
+SuccessExitStatus=143
+
+User=eoin
+Group=eoin
+
+Type=simple
+
+WorkingDirectory=/home/eoin/domain-name-flow-checkout
+ExecStart=/usr/bin/java -jar target/domain-name-flow-0.0.1-standalone.jar
+ExecStop=/bin/kill -15 $MAINPID
+
+[Install]
+WantedBy=multi-user.target
