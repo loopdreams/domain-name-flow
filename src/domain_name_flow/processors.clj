@@ -56,9 +56,9 @@
              (> timestamp previous-stoptime)) ;; don't double-count (a bit pointless here, doesn't work like this in practice)
        [state {:domains    [domain]
                :timestamps [timestamp]
-               :names      [{:cert c-authority}]
-               :log        c-log
-               :tld        tld}]
+               :names      [{:cert c-authority
+                             :log c-log
+                             :tld tld}]}]
        [state nil]))))
 
 
