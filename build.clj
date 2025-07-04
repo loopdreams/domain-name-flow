@@ -2,7 +2,7 @@
   (:require [clojure.tools.build.api :as b]))
 
 (def lib 'domain-name-flow)
-(def version (format "1.2.%s" (b/git-count-revs nil)))
+(def version "0.0.1")
 (def class-dir "target/classes")
 (def uber-file (format "target/%s-%s-standalone.jar" (name lib) version))
 
