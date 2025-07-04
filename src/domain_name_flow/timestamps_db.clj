@@ -3,6 +3,7 @@
             [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]
             [clojure.java.io :as io]
+            [taoensso.telemere :as tel]
             [jsonista.core :as json])
   (:import java.time.Instant))
 
@@ -86,7 +87,9 @@ create table timestamp_counts (
 (defn timestamp-db-writer
   ([] {:ins {:db-data "channel to receive data to write. Expects {:date x :count x}"}
        :workload :io})
-  ([args] (db-init) (assoc args :ds ds))
+  ([args] (do (db-init)
+              (tel/log! {:level :info :msg "sql db created at db/"})
+              (assoc args :ds ds)))
   ([state _transition] state)
   ([{:keys [ds] :as state} _in msg]
    (when (seq msg)
