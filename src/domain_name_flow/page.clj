@@ -52,7 +52,7 @@
    [:hr {:class "text-[#8458B3]"}]
    about-text
    (reduce into
-           [:div {:hx-ext "ws" :ws-connect "/"}]
+           [:div {:hx-ext "ws" :ws-connect "/fl"}]
            [[(ws-component "stats")]
             (mapv ws-component-collapsible ["gtlds" "cctlds" "certs" "logs"])
             [(ws-component "hourly-count")]])

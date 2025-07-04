@@ -74,7 +74,7 @@
      :body (json/write-value-as-string data)}))
 
 (compojure/defroutes app
-  (compojure/GET "/" req (handler-main req))
+  (compojure/GET "/fl" req (handler-main req))
   (compojure/GET "/timestamp-counts" req (get-timestamp-counts req)))
 
 (defn server-start
