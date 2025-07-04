@@ -43,7 +43,7 @@
      [:p "The domains are then split, processed further, and grouped by things like top-level domain or the number of domains registered per hour."]
      [:br]
      [:p "More info and source code can be found "
-      [:a {:href "https://github.com/loopdreams" :class link-style} "here."]]]))
+      [:a {:href "https://github.com/loopdreams/domain-name-flow" :class link-style} "here."]]]))
 
 ;; Colours - https://www.behance.net/gallery/80191113/Minimalist-Color-Palettes-are-back#
 (defn main-page-layout [req]
