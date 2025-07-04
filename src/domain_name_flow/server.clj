@@ -75,7 +75,7 @@
 
 (compojure/defroutes app
   (compojure/GET "/fl" req (handler-main req))
-  (compojure/GET "/timestamp-counts" req (get-timestamp-counts req)))
+  (compojure/GET "/fl/timestamp-counts" req (get-timestamp-counts req)))
 
 (defn server-start
   [args]
