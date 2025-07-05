@@ -36,9 +36,9 @@
     [:div {:id "about" :class "pt-10"}
      [:p "This page reads the real-time stream of newly registered domain names that are broadcast by "
       [:a {:href "https://openintel.nl/data/zonestream/" :class link-style} "zonestream"]
-      ", an open data project by "
-      [:a {:href "https://openintel.nl/" :class link-style} "OpenIntel"]
-      ". The domain names originated in Certificate Transparency logs."]
+      ". Zonestream is part of an open data initiative by "
+      [:a {:href "https://openintel.nl/" :class link-style} "OpenINTEL"]
+      ", a joint project of the University of Twente, SIDN, NLnet Labs and SURF. The domain names originated in Certificate Transparency logs."]
      [:br]
      [:p "The domains are then split, processed further, and grouped by things like top-level domain or the number of domains registered per hour."]
      [:br]
