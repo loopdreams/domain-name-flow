@@ -22,3 +22,7 @@ This project also uses [htmx](https://htmx.org/), mainly because it was quick an
 The main entry point is the `flow.clj` namespace. 
 
 You can build it with the build.sh file in the scripts folder (requires npm & clojure).
+
+# Licence 
+
+This work is licensed under CC BY-NC 4.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-nc/4.0/ 
