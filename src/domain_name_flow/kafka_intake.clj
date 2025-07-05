@@ -13,7 +13,7 @@
   [bootstrap-server]
   (let [consumer-props
         {"bootstrap.servers",  bootstrap-server
-         "group.id",           "DomainNameFlow"
+         "group.id",           "example"
          "key.deserializer",   StringDeserializer
          "value.deserializer", StringDeserializer
          "auto.offset.reset",  "latest"
