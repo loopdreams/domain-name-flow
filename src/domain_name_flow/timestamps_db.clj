@@ -70,11 +70,15 @@ create table timestamp_counts (
          [(update-state state dt dy hr)
           nil]
 
-         (> dy current-day)
+         ;; Daily rollover
+         (or (> dy current-day)
+             ;; Monthly rollover
+             (and (= dy 1) (not= current-day 1)))
          [(update-state state dt dy hr)
           {:db-data [{:date  (encode-db-key (:ref-timestamp state))
                       :count current-count}]}]
 
+         ;; Hourly rollover
          (> hr current-hour)
          [(update-state-hour state dt hr)
           {:db-data [{:date  (encode-db-key (:ref-timestamp state))
