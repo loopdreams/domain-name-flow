@@ -5,7 +5,8 @@
             [cljs.core.async :refer [<!]]))
 
 (defn echart-spec [{:keys [series offset]}]
-  {:xAxis    {:type "time"}
+  {:xAxis    {:type "time"
+              :name "UTC"}
    :tooltip {:trigger "axis"}
    :yAxis    {:name "Domain Counts (Hourly)"}
    :series   {:type "line"
