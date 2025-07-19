@@ -57,7 +57,7 @@
     (page/main-page req)))
 
 (defn get-timestamp-counts [_req]
-  (let [data (db/timestamp-counts-tuples)]
+  (let [data (db/timestamp-counts-tuples-month)]
     {:status 200
      :headers {"Content-Type" "application/json"}
      :body (json/write-value-as-string data)}))
