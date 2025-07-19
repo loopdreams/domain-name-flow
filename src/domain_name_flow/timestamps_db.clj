@@ -133,10 +133,12 @@ create table timestamp_counts (
 (defn timestamp-counts-tuples-month []
   (let [data (sql/query ds ["select * from timestamp_counts"])
         series (->> data
-                    filter-current-month
-                    (mapv (fn [{:timestamp_counts/keys [date count]}])))]
+                    (filter filter-current-month)
+                    (mapv (fn [{:timestamp_counts/keys [date count]}]
+                            [(parse-db-key date) count])))]
     {:series series
      :offset (twentyfour-hr-window (last series))}))
+
 
 (comment
   (count (sql/query ds ["select * from timestamp_counts"])))
