@@ -11,7 +11,7 @@ Group=eoin
 Type=simple
 
 WorkingDirectory=/home/eoin/domain-name-flow-checkout
-ExecStart=/usr/bin/java -jar target/domain-name-flow-0.0.1-standalone.jar
+ExecStart=/usr/bin/java -jar target/domain-name-flow-0.0.2-standalone.jar
 ExecStop=/bin/kill -15 $MAINPID
 
 [Install]
