@@ -1,9 +1,7 @@
 (ns domain-name-flow.kafka-intake
   (:require
    [clojure.core.async :as a]
-   [clojure.core.async.flow :as flow]
-   [clojure.string :as str]
-   [jsonista.core :as json])
+   [clojure.core.async.flow :as flow])
   (:import
    (java.time Duration)
    (org.apache.kafka.clients.consumer KafkaConsumer)
@@ -13,7 +11,7 @@
   [bootstrap-server]
   (let [consumer-props
         {"bootstrap.servers",  bootstrap-server
-         "group.id",           "example"
+         "group.id",           "DomainNameFlow"
          "key.deserializer",   StringDeserializer
          "value.deserializer", StringDeserializer
          "auto.offset.reset",  "latest"
