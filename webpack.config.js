@@ -7,5 +7,6 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'resources/public', 'js'),
     filename: "libs.js"
-  },  
+  },
+  mode: 'production',
 };
