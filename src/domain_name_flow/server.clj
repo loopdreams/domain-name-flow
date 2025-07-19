@@ -39,17 +39,6 @@
 
 
 
-
-(defn format-stats-component [msg]
-  (let [{:keys [n-items sum max min average]} msg]
-    [:ul {:class "list-disc list-inside"}
-     [:li [:span {:class "border-solid border-1 bg-[#D0BDF4] px-1"} (format "%,2d" n-items)] " domain names received"]
-     [:li (format "The average name length is %.2f characters" average)]
-     [:li (format "The longest name is %d characters" max)]
-     [:li (if (= min 1)
-            (format "The shortest name is %d character" min)
-            (format "The shortest name is %d characters" min))]]))
-
 (defn format-hourly-count-component [msg]
   (format "%,2d domains received this hour." msg))
 
@@ -57,7 +46,7 @@
   (let [b-cast (fn [label hic conns]
                  (pmap #(ringws/send % (str (h/html [:div {:id label} hic]))) conns))]
     (case label
-      "stats"                           (b-cast label (format-stats-component msg) @conns)
+      "stats"                           (b-cast label (page/format-stats-component msg) @conns)
       "hourly-count"                    (b-cast label (format-hourly-count-component msg) @conns)
       ("gtlds" "cctlds" "certs" "logs") (b-cast label msg @conns))))
 
@@ -75,7 +64,9 @@
 
 (compojure/defroutes app
   (compojure/GET "/fl" req (handler-main req))
-  (compojure/GET "/fl/timestamp-counts" req (get-timestamp-counts req)))
+  (compojure/GET "/fl/timestamp-counts" req (get-timestamp-counts req))
+  (compojure/GET "/fl/historical-months" req (page/historical-months-index req))
+  (compojure/GET "/fl/historical-months/:id" [id] (page/historical-months-page id)))
 
 (defn server-start
   [args]
