@@ -60,8 +60,8 @@
 (def main-bg-colours "bg-[#E5EAF5] text-[#494D5F]")
 ;; Colours - https://www.behance.net/gallery/80191113/Minimalist-Color-Palettes-are-back#
 
-(def about-text
-  (let [available-months (mapv str (.list (io/file "data/historical/")))]
+(defn about-text []
+  (let [available-months (mapv str (.list (io/file "db/historical/")))]
     [:div {:id "about" :class "pt-10"}
      [:p "This page reads the real-time stream of newly registered domain names that are broadcast by "
       [:a {:href "https://openintel.nl/data/zonestream/" :class link-style} "zonestream"]
@@ -85,7 +85,7 @@
 
 (defn main-page-layout [req]
   (default-page-layout
-   about-text
+   (about-text)
    (reduce into
            [:div {:hx-ext "ws" :ws-connect "/"}]
            [[(ws-component "stats")]
@@ -109,24 +109,29 @@
       (str/capitalize)))
 
 (defn historical-months-index [req]
-  (let [available-months (mapv str (.list (io/file "data/historical/")))]
+  (let [available-months (mapv str (.list (io/file "db/historical/")))]
     (hp/html5
         head-data
         [:body {:class main-bg-colours}
          (default-page-layout
           [:h2 {:class "text-xl mt-8 mb-2 font-bold" } "Previous Months"]
           (into [:ul]
-               (for [m available-months]
-                 [:li [:a {:href (str "./historical-months/" m)
-                           :class link-style}
-                       (str (subs m 0 4) ", " (id->month-name m))]])))])))
+                (for [m available-months]
+                  [:li [:a {:href (str "./historical-months/" m)
+                            :class link-style}
+                        (str (subs m 0 4) ", " (id->month-name m))]]))
+          [:br]
+          [:p [:a {:href "/" :class link-style} "Home"]])])))
+
+
+
 
 (defn historical-months-page [id]
-  (let [[frequencies-file stats-file]  (rest (file-seq (io/as-file (str "data/historical/" id))))
-        {:keys [timestamp tlds certs]} (read-string (slurp frequencies-file))
+  (let [[frequencies-file stats-file]  (rest (file-seq (io/as-file (str "db/historical/" id))))
+        {:keys [_timestamp tlds certs]} (read-string (slurp frequencies-file))
+        {:keys [_timestamp stats]}      (read-string (slurp stats-file))
         [gtlds cctlds]                 (tables/sort-g-cc-tlds tlds)
-        [certs-freq logs-freq]         (tables/sort-certs-db certs)
-        stats                          (read-string (slurp stats-file))]
+        [certs-freq logs-freq]         (tables/sort-certs-db certs)]
     (hp/html5
         head-data
       [:body {:class main-bg-colours}

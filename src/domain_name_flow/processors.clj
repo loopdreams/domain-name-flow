@@ -80,7 +80,8 @@
   ([] {:ins    {:domains "Channel to receive domain strings"
                 :push    "Channel to signal when to push to server component"
                 :reset   "Channel to receive signal to reset counts"
-                :backup  "Channel to receive signal to backup stats to file (overwrites file)"}
+                :backup  "Channel to receive signal to backup stats to file (overwrites file)"
+                :monthly-save-and-reset "Channel to receive info for monthly save"}
        :outs   {:name-stats "Channel to send stat values"}
        :params {:backup-file "file name of edn backup file."}})
   ([{:keys [backup-file] :as args}]
@@ -110,6 +111,21 @@
                         :stats     (:name-stats state)}]
          (spit (:backup-file state) save-data))
        [state nil])
+     :monthly-save-and-reset
+     (do
+       (let [file-loc (str (:monthly-save-loc msg) "stats.edn")
+             _ (io/make-parents file-loc)
+             time (java.util.Date.)
+             save-data {:timestamp time
+                        :stats (:name-stats state)}]
+         (spit file-loc save-data))
+       [(assoc state
+               :name-stats {:n-items 0
+                            :sum     0
+                            :min     1000
+                            :max     0
+                            :average 0})
+        nil])
      :reset
      [(assoc state :name-stats {:n-items 0
                                 :sum     0
@@ -124,7 +140,8 @@
   Pushes to server on push signal."
   ([] {:ins {:names "Channel to receive a name on."
              :push "Channel to receive push to server signal"
-             :backup "Channel to receive signal to backup dbs to file. Overwrites files."}
+             :backup "Channel to receive signal to backup dbs to file. Overwrites files."
+             :monthly-save-and-reset "Channel to receive info for monthly save and reset"}
        :outs {:frequencies "Channel to send name frequencies map"}
        :params {:backup-file "File name for backups"}
        :workload :mixed})
@@ -142,7 +159,7 @@
 
   ([state _transition] state)
 
-  ([{:keys [tld-db cert-db] :as state} input-id {:keys [cert log tld]}]
+  ([{:keys [tld-db cert-db] :as state} input-id {:keys [cert log tld monthly-save-loc]}]
    (case input-id
      :names
      (do
@@ -159,10 +176,26 @@
                         :certs certs}]
          (spit (:backup-file state) save-data))
        [state nil])
+     :monthly-save-and-reset
+     (do
+       (let [tlds @tld-db
+             certs @cert-db
+             time (java.util.Date.)
+             save-data {:timestamp time
+                        :tlds tlds
+                        :certs certs}
+             f-name (str monthly-save-loc "frequencies.edn")
+             _ (io/make-parents f-name)]
+         (spit f-name save-data))
+       (reset! tld-db {})
+       (reset! cert-db {})
+       (println @tld-db)
+       [state nil])
      :push
      [state (when (and (seq @tld-db) (seq @cert-db))
               {:frequencies [{:tlds @tld-db
                               :certs @cert-db}]})])))
+
 
 ;; Scheduler - schedule push to websocket (down the line)
 

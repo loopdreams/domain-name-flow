@@ -40,12 +40,14 @@ create table timestamp_counts (
 (comment
   (parse-db-key 2024060606))
 
+
 (defn timestamps-manager
   ([] {:ins  {:timestamps "Channel to receive timestamps"
               :push       "Channel to receive push signal"}
        :outs {:db-data      "Channel to send data for writing to db"
               :hourly-count "Channel to send count for current hour. Sends on push"
-              :backup-signal "Signal for other processes to also write data (hourly)"}})
+              :backup-signal "Signal for other processes to also write data (hourly)"
+              :monthly-save-and-reset "Channel to send monthly rollover info"}})
   ([args] args)
   ([state _transition] state)
   ([{:keys [current-day current-hour current-count] :as state} in msg]
@@ -70,10 +72,18 @@ create table timestamp_counts (
          [(update-state state dt dy hr)
           nil]
 
+         ;; Monthly rollover - signal to save and reset counts
+         (and (= dy 1) (not= current-day 1))
+         (let [month-id (jt/format (jt/formatter "yyyyMM")
+                                   (jt/minus dt (jt/months 1)))
+               monthly-save-loc (str "db/historical/" month-id "/")]
+           [(update-state state dt dy hr)
+            {:db-data [{:date (encode-db-key (:ref-timestamp state))
+                        :count current-count}]
+             :monthly-save-and-reset [{:monthly-save-loc monthly-save-loc}]}])
+
          ;; Daily rollover
-         (or (> dy current-day)
-             ;; Monthly rollover
-             (and (= dy 1) (not= current-day 1)))
+         (> dy current-day)
          [(update-state state dt dy hr)
           {:db-data [{:date  (encode-db-key (:ref-timestamp state))
                       :count current-count}]}]
@@ -84,6 +94,7 @@ create table timestamp_counts (
           {:db-data [{:date  (encode-db-key (:ref-timestamp state))
                       :count current-count}]
            :backup-signal [:backup-now]}]
+
          :else
          [(update state :current-count inc) nil])))))
 

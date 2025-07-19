@@ -1,9 +1,21 @@
 (ns domain-name-flow.url-generator
   (:require [jsonista.core :as json]
             [clojure.core.async :as a]
+            [java-time.api :as jt]
             [clojure.core.async.flow :as flow]))
 
 ;; Some test functions to generate data similar to the kafka channel data
+
+(def test-timestamp-seq
+  (let [now (jt/instant)]
+    (loop [n 30
+           d now
+           res []]
+      (if (zero? n) res
+          (recur (dec n) (jt/plus d (jt/days 1)) (conj res d))))))
+
+
+
 
 (defn url-generator
   "Periodically generates a random url string with either .com, .org. or .net"
@@ -20,6 +32,22 @@
       (when (and put (not @stop-atom))
         (^[long] Thread/sleep wait)
         (recur)))))
+
+(defn url-generator-daily-increment
+  "Periodically generates a random url string with either .com, .org. or .net. Each timestamp is one day"
+  [out wait stop-atom]
+  (loop [n 0]
+    (let [tld (rand-nth [".com." ".net." ".org." ".eu" ".au" ".site" ".ie" ".org" ".hotel" ".dublin" ".something" ".foo" ".bar"])
+          domain (apply str (repeatedly (rand-nth (range 2 20)) #(rand-nth "abcdefghijklmnopqrstuvwxyz0123456789")))
+          ct-name (rand-nth ["DigiCert 'Wyvern2026h1'" "Sectigo 'Mammoth2025h2'" "Sectigo 'Elephant2025h2'"])
+          url (str domain tld)
+          encoded (json/write-value-as-string {:domain url
+                                               :timestamp (quot (inst-ms (nth test-timestamp-seq (mod n 30))) 1000)
+                                               :ct_name ct-name})
+          put (a/>!! out encoded)]
+      (when (and put (not @stop-atom))
+        (^[long] Thread/sleep wait)
+        (recur (inc n))))))
 
 
 ;; Process component:

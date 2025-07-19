@@ -15,7 +15,7 @@
     {:generator         {:args {:server-url "kafka.zonestream.openintel.nl:9092"
                                 :topic      "newly_registered_domain"
                                 ;; The 'wait' here is for when using the test url generator
-                                :wait       500}
+                                :wait       2000}
                          ;; :proc (flow/process #'kafka/source)}
                          :proc (flow/process #'tester/test-source)}
      :record-handler    {:args {:backup-file "db/name_stats.edn"}
@@ -42,6 +42,8 @@
             [[:timestamp-manager :db-data]          [:timestamp-db :db-data]]
             [[:timestamp-manager :backup-signal]    [:frequencies-store :backup]]
             [[:timestamp-manager :backup-signal]    [:domain-name-stats :backup]]
+            [[:timestamp-manager :monthly-save-and-reset]     [:frequencies-store :monthly-save-and-reset]]
+            [[:timestamp-manager :monthly-save-and-reset]     [:domain-name-stats :monthly-save-and-reset]]
             [[:timestamp-manager :hourly-count]     [:webserver :hourly-count]]
             [[:domain-name-stats :name-stats]       [:webserver :name-stats]]
             [[:frequencies-store :frequencies]      [:webserver :frequencies]]]}))
