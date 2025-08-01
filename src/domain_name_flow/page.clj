@@ -128,13 +128,14 @@
 
 
 (defn historical-months-page [id]
-  (let [[frequencies-file stats-file]  (rest (file-seq (io/as-file (str "db/historical/" id))))
-        _ (tel/log! {:level :info :msg (str frequencies-file)})
-        _ (tel/log! {:level :info :msg (io/as-file (str "db/historical/" id))})
+  (let [files                           (file-seq (io/as-file (str "db/historical/" id)))
+        ;; Filter for name here, because the file-seq seemed to be returning the files in the wrong order...
+        frequencies-file                (first (filter #(re-find #"frequencies" (str %)) files))
+        stats-file                      (first (filter #(re-find #"stats" (str %)) files))
         {:keys [_timestamp tlds certs]} (read-string (slurp frequencies-file))
         {:keys [_timestamp stats]}      (read-string (slurp stats-file))
-        [gtlds cctlds]                 (tables/sort-g-cc-tlds tlds)
-        [certs-freq logs-freq]         (tables/sort-certs-db certs)]
+        [gtlds cctlds]                  (tables/sort-g-cc-tlds tlds)
+        [certs-freq logs-freq]          (tables/sort-certs-db certs)]
     (hp/html5
         head-data
       [:body {:class main-bg-colours}
