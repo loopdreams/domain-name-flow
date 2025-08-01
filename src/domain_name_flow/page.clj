@@ -129,8 +129,8 @@
 
 (defn historical-months-page [id]
   (let [[frequencies-file stats-file]  (rest (file-seq (io/as-file (str "db/historical/" id))))
-        _ (tel/log {:level "info" :msg (str frequencies-file)})
-        _ (tel/log {:level "info" :msg (io/as-file (str "db/historical/" id))})
+        _ (tel/log! {:level "info" :msg (str frequencies-file)})
+        _ (tel/log! {:level "info" :msg (io/as-file (str "db/historical/" id))})
         {:keys [_timestamp tlds certs]} (read-string (slurp frequencies-file))
         {:keys [_timestamp stats]}      (read-string (slurp stats-file))
         [gtlds cctlds]                 (tables/sort-g-cc-tlds tlds)
