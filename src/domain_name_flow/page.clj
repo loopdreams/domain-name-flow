@@ -5,6 +5,7 @@
             [domain-name-flow.timestamps-db :refer [ds]]
             [jsonista.core :as json]
             [clojure.java.io :as io]
+            [taoensso.telemere :as tel]
             [java-time.api :as jt]
             [clojure.string :as str]))
 
@@ -127,7 +128,9 @@
 
 
 (defn historical-months-page [id]
-  (let [[frequencies-file stats-file]  (rest (file-seq (io/as-file (str "/home/eoin/domain-name-flow-checkout/db/historical/" id))))
+  (let [[frequencies-file stats-file]  (rest (file-seq (io/as-file (str "db/historical/" id))))
+        _ (tel/log {:level "info" :msg (str frequencies-file)})
+        _ (tel/log {:level "info" :msg (io/as-file (str "db/historical/" id))})
         {:keys [_timestamp tlds certs]} (read-string (slurp frequencies-file))
         {:keys [_timestamp stats]}      (read-string (slurp stats-file))
         [gtlds cctlds]                 (tables/sort-g-cc-tlds tlds)
