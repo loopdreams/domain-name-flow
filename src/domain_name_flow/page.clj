@@ -117,7 +117,7 @@
          (default-page-layout
           [:h2 {:class "text-xl mt-8 mb-2 font-bold" } "Previous Months"]
           (into [:ul]
-                (for [m available-months]
+                (for [m (sort available-months)]
                   [:li [:a {:href (str "/fl/historical-months/" m)
                             :class link-style}
                         (str (subs m 0 4) ", " (id->month-name m))]]))
