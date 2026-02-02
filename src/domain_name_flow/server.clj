@@ -63,10 +63,10 @@
      :body (json/write-value-as-string data)}))
 
 (compojure/defroutes app
-  (compojure/GET "/fl" req (handler-main req))
-  (compojure/GET "/fl/timestamp-counts" req (get-timestamp-counts req))
-  (compojure/GET "/fl/historical-months" req (page/historical-months-index req))
-  (compojure/GET "/fl/historical-months/:id" [id] (page/historical-months-page id)))
+  (compojure/GET "/" req (handler-main req))
+  (compojure/GET "/timestamp-counts" req (get-timestamp-counts req))
+  (compojure/GET "/historical-months" req (page/historical-months-index req))
+  (compojure/GET "/historical-months/:id" [id] (page/historical-months-page id)))
 
 (defn server-start
   [args]

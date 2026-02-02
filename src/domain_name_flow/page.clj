@@ -76,7 +76,7 @@
       [:a {:href "https://github.com/loopdreams/domain-name-flow" :class link-style} "here."]]
      (when (seq available-months)
        [:p "This data restarts every month. Counts for previous months are "
-        [:a {:href "/fl/historical-months" :class link-style} "here."]])]))
+        [:a {:href "/historical-months" :class link-style} "here."]])]))
 
 (defn default-page-layout [& body]
   [:div {:id "main" :class "max-w-2xl m-auto mt-5 p-2"}
@@ -88,7 +88,7 @@
   (default-page-layout
    (about-text)
    (reduce into
-           [:div {:hx-ext "ws" :ws-connect "/fl"}]
+           [:div {:hx-ext "ws" :ws-connect "/"}]
            [[(ws-component "stats")]
             (mapv ws-component-collapsible ["gtlds" "cctlds" "certs" "logs"])
             [(ws-component "hourly-count")]])
@@ -118,11 +118,11 @@
           [:h2 {:class "text-xl mt-8 mb-2 font-bold" } "Previous Months"]
           (into [:ul]
                 (for [m available-months]
-                  [:li [:a {:href (str "/fl/historical-months/" m)
+                  [:li [:a {:href (str "/historical-months/" m)
                             :class link-style}
                         (str (subs m 0 4) ", " (id->month-name m))]]))
           [:br]
-          [:p [:a {:href "/fl" :class link-style} "Home"]])])))
+          [:p [:a {:href "/" :class link-style} "Home"]])])))
 
 
 
@@ -142,8 +142,8 @@
        (default-page-layout
         [:h2 {:class "text-xl my-8 font-bold"}
          (str "Historical Recordings for " (id->month-name id) ", " (subs id 0 4))]
-        [:p [:a {:href "/fl/historical-months" :class link-style} "Back to months index"]]
-        [:p [:a {:href "/fl" :class link-style} "Home"]]
+        [:p [:a {:href "/historical-months" :class link-style} "Back to months index"]]
+        [:p [:a {:href "/" :class link-style} "Home"]]
         (section-component "stats-historical" [:div (format-stats-component stats)])
         (section-component-collapsible "gtlds" gtlds)
         (section-component-collapsible "cctlds" cctlds)
