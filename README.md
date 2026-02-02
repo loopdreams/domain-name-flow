@@ -2,8 +2,6 @@
 
 An experimental web app to try out the recently released [flow](https://clojure.github.io/core.async/clojure.core.async.flow.html) clojure async library.
 
-View live (hopefully) [here.](https://eoin.site/fl)
-
 The app reads the stream of domain names as broadcast by [zonestream](https://openintel.nl/data/zonestream/), an open data project by [OpenIntel](https://openintel.nl/data/zonestream/). 
 
 I came across the zonestream data feed from a great [presentation by Raffaele Sommese](https://www.caida.org/workshops/aims/2502/slides/gmi_aims_5_rsommese.pdf) on DNS abuse. 
